@@ -525,7 +525,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 	
 	<select id="getDetectionInfoPollHeader" resultType="java.lang.String" parameterType="java.util.HashMap">
-	<!-- SELECT
+		SELECT
 			PD.POPCNAME AS pollName
 		FROM 
 			NKY_DETECTION_INFORMATION NDI
@@ -533,13 +533,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			INNER JOIN NKY_MONITORING_TASK NMT ON NSI.TASK_CODE = NMT.TASK_CODE
 			INNER JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
 			LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
-			LEFT JOIN V_NKY_MONITORING_POLL PD ON PD.CAS = NDI.CAS_CODE AND PD.PROJECT_CODE = NMP.PROJECT_CODE -->
-		select pd.POPCNAME AS pollName from V_NKY_MONITORING_POLL pd
- 			join NKY_DETECTION_INFORMATION ndi on pd.cas = ndi.cas_code
- 			join NKY_SAMPLING_INFO nsi on nsi.sample_code = ndi.sample_code
- 			join NKY_MONITORING_TASK nmt on nsi.task_code = nmt.task_code
- 			join NKY_MONITORING_PROJECT nmp on nmt.project_code = nmp.project_code and pd.PROJECT_CODE = nmp.project_code and pd.PROJECT_CODE = nmp.project_code 
- 			join V_NKY_MONITORING_AGR agr on agr.CODE = nsi.agr_code and agr.PROJECT_CODE = nmp.project_code
+			LEFT JOIN V_NKY_MONITORING_POLL PD ON PD.CAS = NDI.CAS_CODE AND PD.PROJECT_CODE = NMP.PROJECT_CODE 
 		WHERE
 			NMT.PROJECT_CODE = #{projectCode}
 			<if test="qt != '' and qt != null">
