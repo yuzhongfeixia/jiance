@@ -1,0 +1,19 @@
+@charset "utf-8";
+/* CSS Document */
+
+body {
+	margin-left: 0px;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	background: url(../images/login_bg.png) repeat ;
+	font-size:16px;
+	color:#343434;
+}
+*:focus{ outline:none;}
+
+.login_ipt{ width:175px; height:26px; border: none; background: url(../images/login_ipt.png) no-repeat; line-height:26px; padding:0px 0px 0px 5px;}
+
+.login_btn{ width:86px; height:33px; line-height:33px; background: url(../images/login_btn.png) repeat-x; border:none; cursor:pointer; font-size:16px; font-weight:800; color:#ffffff;}
+
+.login_btn:hover{ width:86px; height:33px; line-height:33px; background: url(../images/login_btn_p.png) repeat-x; border:none; cursor:pointer; font-size:16px; font-weight:800; color:#ffffff;}

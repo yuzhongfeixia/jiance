@@ -1,0 +1,240 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<style type="text/css">
+body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;}
+</style>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=1.5&ak=AC23db0f7c97dc8e4f427a4c7d1059de"></script>
+<script type="text/javascript" src="../../../../../assets/plugins/jquery-1.10.1.min.js"></script>
+<script type="text/javascript" src="../../../../../assets/js/sysUtil.js"></script>  
+<script type="text/javascript" src="../../../../../plug-in/tools/Map.js"></script>
+<title>叠加行政区划图</title>
+</head>
+<body>
+<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+
+// 标注点json
+var markerJson = window.parent.getMarkerFun();
+
+// 百度地图API功能
+var map = new BMap.Map("allmap",{minZoom:8,maxZoom:12});
+
+//创建地址解析器实例
+var myGeo = new BMap.Geocoder();
+
+var pointMap = new Map();
+var infoWindowMap = new Map();
+var markerMap = new Map();
+	
+//设置地图信息
+if(markerJson != undefined && markerJson.mapDatas != undefined){
+	for(var i in markerJson.mapDatas){
+		//百度地图API功能
+		eval('var point' + i + ' = new BMap.Point(markerJson.mapDatas['+i+'].longitude, markerJson.mapDatas['+i+'].latitude); ' );// 创建标注
+ 		if(markerJson.mapDatas[i].icon != undefined){
+ 			eval('var myIcon'+i+' = new BMap.Icon(markerJson.mapDatas['+i+'].icon,new BMap.Size(50,40)); ' );
+ 		}else{
+ 			eval('var myIcon'+i+' = new BMap.Icon("../../../../../assets/img/marker_red.png",new BMap.Size(50,40)); ' );
+ 		}
+ 		eval('var marker' + i + ' = new BMap.Marker(point'+i+',{ icon:myIcon'+i+' }); ' );
+ 		//创建信息窗口 设置不允许信息窗发送短息
+		eval('var infoWindow'+i+' = new BMap.InfoWindow(markerJson.mapDatas['+i+'].info,{ enableMessage:false }); ' );
+		eval('marker'+i+'.addEventListener("click", function(){ this.openInfoWindow(infoWindow'+i+'); });' );
+		eval(' map.addOverlay(marker'+i+'); ' );
+		pointMap.put(markerJson.mapDatas[i].id,eval('point' + i));// 将标注添加到地图中
+		infoWindowMap.put(markerJson.mapDatas[i].id,eval('infoWindow' + i));
+		markerMap.put(markerJson.mapDatas[i].id,eval('marker' + i));
+	}	
+}
+
+// 弹出信息框
+function openInfo(id){
+	var pointTemp = pointMap.get(id);
+	var infoWindowTemp = infoWindowMap.get(id);
+	var markerTemp = markerMap.get(id);
+	markerTemp.openInfoWindow( infoWindowTemp ); 
+	map.centerAndZoom( pointTemp ,map.getZoom() );
+}
+
+var s = ["上海","江苏","安徽","浙江","河南","湖北","山东","江西","福建"];//"陕西","河北","天津","广东",,,"湖南","山西","内蒙古","北京","重庆","辽宁","甘肃","四川"];
+var p1 = new BMap.Point(105.729746,34.58848);//天水
+var p2 = new BMap.Point(106.545583,29.569489);//重庆
+var p3 = new BMap.Point(119.550275,26.544433);
+var p4 = new BMap.Point(128.723627,32.708095);
+var p5 = new BMap.Point(116.37904,39.891343);
+var p6 = new BMap.Point(108.302627,40.032917);
+
+var p7 = new BMap.Point(121.603873,38.978286);
+var p8 = new BMap.Point(123.590781,25.859796);
+
+
+var s2 = ["南京市","苏州市","宿迁市","常州市","盐城市","镇江市","泰州市","南通市","无锡市","扬州市","淮安市","连云港市","徐州市"];
+var s2_2 = ["320100","320500","321300","320400","320900","321100","321200","320600","320200","321000","320800","320700","320300"];
+//var js_jd = ["118.78","120.62","118.3","119.95","120.13","119.44","119.9","120.86","120.29","119.42","119.19","119.16","117.2"];
+//var js_wd = ["32.04","31.32","33.96","31.79","33.38","32.2","32.49","32.01","31.59","32.39","33.5","34.59","34.26"];
+
+
+map.addEventListener("dragend", function(e) {
+	if( map.getBounds().containsPoint(p1) || 
+		map.getBounds().containsPoint(p2) || 
+		map.getBounds().containsPoint(p3) || 
+		map.getBounds().containsPoint(p4) ||
+		map.getBounds().containsPoint(p5) ||
+		map.getBounds().containsPoint(p6) ||
+		map.getBounds().containsPoint(p7) ||
+		map.getBounds().containsPoint(p8) 
+	  )
+	{
+		map.reset();
+	}
+});
+
+function getBoundary(){  
+// 	map.setMapStyle(mapStyle);
+    var bdary = [];
+    var area ;
+    
+/*  // 其他省白色遮挡   
+    for (var k = 0; k<s.length; k++){
+    	area = s[k];
+	    bdary[k] = new BMap.Boundary();
+	    if(area == "江苏"){
+	    	bdary[k].get(s[k], function(rs){       //获取行政区域
+		        var count = rs.boundaries.length; //行政区域的点有多少个
+		        for(var i = 0; i < count; i++){
+		            ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 1, fillColor: ""}); //建立多边形覆盖物
+			        map.addOverlay(ply);  //添加覆盖物
+		        } 
+		    });
+	    }else{
+	    	bdary[k].get(s[k], function(rs){       //获取行政区域
+		        var count = rs.boundaries.length; //行政区域的点有多少个
+		        for(var i = 0; i < count; i++){
+        		    ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 1, fillColor: "#ffffff"}); //建立多边形覆盖物
+        		    ply.setFillOpacity(1);
+		            map.addOverlay(ply);  //添加覆盖物
+		        }         
+		    });
+	    }
+  	}
+*/
+  	// 江苏省边界线
+ 	var bdary2 = new BMap.Boundary();
+    bdary2.get("江苏", function(rs){       //获取行政区域
+        //map.clearOverlays();        //清除地图覆盖物       
+        var count = rs.boundaries.length; //行政区域的点有多少个
+        for(var i = 0; i < count; i++){
+            var ply = new BMap.Polygon(rs.boundaries[i], {strokeWeight: 3, strokeColor: "", fillColor: ""}); //建立多边形覆盖物
+            //ply.setFillOpacity(1);
+            map.addOverlay(ply);  //添加覆盖物
+        }    
+    });
+  	
+  	if(markerJson != undefined && markerJson.mapAreaDatas != undefined){
+        for (var k = 0; k<s2.length; k++){
+        	area = s2[k];
+    	    bdary[k] = new BMap.Boundary();
+    	    eval( " var mapAreaDatasJson = markerJson.mapAreaDatas.code_" + s2_2[k] );
+    		//alert("code:"+s2_2[k]+";name:"+s2[k]+";value:"+JSON.stringify(mapAreaDatasJson));
+    		//eval("var color = mapAreaDatasJson.fillColor ");
+        	//alert(color);
+    		if(mapAreaDatasJson != undefined &&　mapAreaDatasJson.cityName  == s2[k]){
+    			eval('bdary['+k+'].get(s2['+k+'], function(rs){ var count = rs.boundaries.length; for(var i = 0; i < count; i++){ ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, fillColor: "'+mapAreaDatasJson.fillColor+'" }); ply.setFillOpacity(1); map.addOverlay(ply); } });');
+    	    	//bdary[k].get(s2[k], function(rs){ var count = rs.boundaries.length; for(var i = 0; i < count; i++){ ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, fillColor: mapAreaDatasJson.fillColor }); ply.setFillOpacity(1); map.addOverlay(ply); } });
+        	}else{
+    	    	bdary[k].get(s2[k], function(rs){       //获取行政区域
+    		        var count = rs.boundaries.length; //行政区域的点有多少个
+    		        for(var i = 0; i < count; i++){	
+    		        	ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, fillColor: markerJson.fillColor}); //建立多边形覆盖物	
+    		            ply.setFillOpacity(1);
+    			        map.addOverlay(ply);  //添加覆盖物
+    		        } 
+    		    });
+        	}
+    		var cityContent = mapAreaDatasJson?mapAreaDatasJson.title:s2[k];
+			var funStr = ""; 
+			funStr +=	'	myGeo.getPoint("'+s2[k]+'", function(point){														';
+			funStr +=	'		if (point) {																					';
+			funStr +=	'			var marker = new BMap.Marker(point);														';
+			if(mapAreaDatasJson != undefined){
+				funStr +=	'		var infoWindow = new BMap.InfoWindow("'+mapAreaDatasJson.info+'",{ enableMessage:false });	';
+				funStr +=	'		marker.addEventListener("click", function(){ this.openInfoWindow(infoWindow); });			';
+			}
+			funStr +=	'			map.addOverlay(marker);																		';
+			funStr +=	'			var opts = {position:point,offset:new BMap.Size(-20, -1)};									';
+			funStr +=	'			var label = new BMap.Label("'+cityContent+'", opts);										';
+			funStr +=	'			label.setStyle({ fontSize:"14px",height:"14px",lineHeight : "14px",fontFamily:"微软雅黑",border:"0px",background: "rgba(0, 0, 0, 0)",filter: "progid:DXImageTransform.Microsoft.gradient(gradientType = 0, startColorstr = #50000000, endColorstr = #50000000)\9"});										';
+			funStr +=	'			map.addOverlay(label);  																	';
+			funStr +=	'		}																								'; 
+			funStr +=	'	});																									';
+			eval(funStr);
+     	}
+    }else{
+    	
+/*  //市划分
+		for (var k = 0; k<s2.length; k++){
+        	area = s2[k];
+    	    bdary[k] = new BMap.Boundary();
+    	    	bdary[k].get(s2[k], function(rs){       //获取行政区域
+    		        var count = rs.boundaries.length; //行政区域的点有多少个
+    		        for(var i = 0; i < count; i++){
+    		            ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, fillColor: ""}); //建立多边形覆盖物
+    		            ply.setFillOpacity(1);
+    			        map.addOverlay(ply);  //添加覆盖物
+    		        } 
+    		    });
+     	}   */
+    }
+    	
+
+//     map.setViewport(ply.getPath());    //调整视野
+    map.centerAndZoom(new BMap.Point(118.778074, 32.057236),8);
+    map.panTo(new BMap.Point(119.778074, 33.057236)); 
+    map.enableScrollWheelZoom();
+}
+
+setTimeout(function(){
+    getBoundary();
+}, 1);
+
+//定义一个图例类
+function ZoomControl(){
+  // 默认停靠位置和偏移量
+  this.defaultAnchor = BMAP_ANCHOR_BOTTOM_LEFT;
+  this.defaultOffset = new BMap.Size(10, 40);
+}
+if(markerJson.property != undefined && markerJson.property.legend != undefined){
+	var legend = markerJson.property.legend;
+	// 通过JavaScript的prototype属性继承于BMap.Control
+	ZoomControl.prototype = new BMap.Control();
+
+	// 自定义控件必须实现自己的initialize方法,并且将控件的DOM元素返回
+	// 在本方法中创建个div元素作为控件的容器,并将其添加到地图容器中
+	ZoomControl.prototype.initialize = function(){
+		var panelDom = createLegendPanel();
+		if($.isArray(legend)){
+			if(legend.length > 0){
+				// 循环加入图例数组
+				for(var num in legend){
+					panelDom.appendChild(legend[num]);
+				}
+			}
+		} else {
+			panelDom.appendChild(legend);
+		}
+		// 添加DOM元素到地图中
+		map.getContainer().appendChild(panelDom);
+		// 将DOM元素返回
+		return panelDom;
+	}
+	
+	// 创建控件
+	var myZoomCtrl = new ZoomControl();
+	// 添加到地图当中
+	map.addControl(myZoomCtrl);
+}
+</script>

@@ -1,0 +1,1690 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hippo.nky.entity.report.LivestockSituationEntity">
+	<resultMap type="java.util.HashMap" id="plantResult">
+        <result column="NAME" property="projectName"/>
+        <result column="PROJECT_CODE" property="projectCode"/>
+        <result column="INDUSTRY_CODE" property="industryCode"/>
+        <result column="PLEVEL" property="projectLevel"/>
+        <result column="orgCode" property="orgCode"/>
+        <result column="YEAR" property="year"/>
+        <result column="RN" property="rn"/>
+        <result column="CODE" property="code"/>
+        <result column="AREANAME" property="areaname"/>
+        <result column="TOTALSUM" property="totalSum"/>
+        <result column="ISQUALSUM" property="isQualSum"/>
+        <result column="PCTSUM" property="pctSum"/>
+        <result column="TYPECODE" property="typecode"/>
+        <result column="TYPENAME" property="typename"/>
+        <result column="OVERSUM" property="overSum"/>
+        <result column="OVERPCT" property="overPct"/>
+        <result column="CLSNO" property="clsNo"/>
+    </resultMap>  
+
+	<!--管理单位下  监测地区及数量 -->	
+	<select id="getAreaCount" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+		SELECT COUNT(*) FROM (
+			SELECT DISTINCT NVL2(NSI.COUNTY_CODE,NSI.COUNTY_CODE,NSI.CITY_CODE) AS CODE 
+	        FROM NKY_SAMPLING_INFO NSI
+	        LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	        LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+			<where>
+				AND NSI.SAMPLE_STATUS != 2
+				AND NMP.PROJECT_CODE IN
+	         	<foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			    	 #{item}
+			 	</foreach>  
+				<if test="pt != '' and pt != null ">
+					AND NSI.DETECTION_CODE = #{pt}
+				</if>
+			</where>
+		)
+	</select>
+	<!--管理单位下  农产品数量 -->
+	<select id="getArgCount" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+		SELECT COUNT(*) FROM (
+			SELECT DISTINCT NSI.AGR_CODE
+				FROM NKY_SAMPLING_INFO NSI
+				LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+				LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+			<where>
+				AND NSI.SAMPLE_STATUS != 2
+				AND NMP.PROJECT_CODE IN
+	         	<foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			    	 #{item}
+			 	</foreach>  
+				<if test="pt != '' and pt != null ">
+					AND NSI.DETECTION_CODE = #{pt}
+				</if>
+			</where>
+		)
+	</select>
+	
+	<!--管理单位下  样品数量 全部数量/合格数量  -->
+	<select id="getSampleCount" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+		 SELECT COUNT(NSI.ID)
+				FROM NKY_SAMPLING_INFO NSI
+				LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+				LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+		<where>
+			AND NSI.SAMPLE_STATUS != 2
+			AND NMP.PROJECT_CODE IN
+	         <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			    	 #{item}
+			 </foreach>  
+	    	<if test="isQualified != '' and isQualified != null ">
+				AND NSI.IS_QUALIFIED = #{isQualified}
+			</if>
+			<if test="pt != '' and pt != null ">
+				AND NSI.DETECTION_CODE = #{pt}
+			</if>
+		</where>
+	</select>
+	
+	<!--管理单位下 污染物数量 -->
+	<select id="getPollCount" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+		SELECT COUNT(*) FROM (
+			SELECT DISTINCT NMDT.POLL_CAS FROM NKY_MONITORING_DECTION_TEMPLET NMDT
+				LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMDT.PROJECT_CODE = NMP.PROJECT_CODE)
+				LEFT JOIN NKY_MONITORING_TASK NMT ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+        		LEFT JOIN NKY_SAMPLING_INFO NSI ON (NSI.TASK_CODE = NMT.TASK_CODE)
+			<where>
+				AND NMP.PROJECT_CODE IN
+	         	<foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			    	 #{item}
+			 	</foreach>  
+				<if test="pt != '' and pt != null ">
+					AND NSI.DETECTION_CODE = #{pt}
+				</if>
+			</where>
+		)
+	</select>
+	
+	<select id="getProjectCode" resultMap="plantResult" parameterType="java.util.HashMap">
+		SELECT NMP.PROJECT_CODE,NMP.NAME FROM NKY_MONITORING_PROJECT NMP 
+			LEFT JOIN NKY_MONITORING_PLAN NMPL ON (NMP.PLAN_CODE = NMPL.PLAN_CODE)
+			<if test="orgCode != null and orgCode != '' ">
+			INNER JOIN NKY_MONITORING_ORGANIZATION NMO ON (NMP.PROJECT_CODE = NMO.PROJECT_CODE)
+			INNER JOIN NKY_ORGANIZATION_INFO NOI ON (NMO.ORG_CODE = NOI.CODE)
+			</if> 
+		<where>
+			<if test="industryCode != null or industryCode != '' ">
+				NMP.INDUSTRY_CODE = #{industryCode}
+			</if>
+			<if test="orgCode == null or orgCode == '' ">
+			AND NMP.STATE = '3'
+			</if>
+			AND NMPL.TYPE = #{type}
+	      	<if test="year != null and year != '' ">
+				AND TO_CHAR(NMP.STARTTIME,'YYYY') = #{year}
+			</if>
+	    	<if test="projectLevel != null and projectLevel != '' ">
+				AND NMPL.PLEVEL = #{projectLevel}
+			</if>
+			<if test="orgCode != null and orgCode != '' ">
+				AND NOI.CODE = #{orgCode}
+			</if>
+		</where>
+	</select>
+	
+	<!-- chenyingqin↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓-->
+	<!--  各类畜产品监测合格率情况-->
+	<select id="getLivestockVarietyQualifiedSituation" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+	SELECT
+	  agrName,
+	  TO_CHAR(samplingCount) AS samplingCount,
+	  TO_CHAR(qualifiedCount) AS qualifiedCount,
+	  '' AS qualifiedRate
+	FROM
+	(
+       SELECT
+          AGR.CNAME AS agrName,
+          COUNT(1) AS samplingCount,
+          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount
+       FROM NKY_SAMPLING_INFO NSI
+       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+       INNER JOIN (
+             SELECT
+                  NDI.SAMPLE_CODE,
+                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+             FROM 
+             NKY_DETECTION_INFORMATION NDI
+             GROUP BY NDI.SAMPLE_CODE
+       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)  
+       WHERE NMP.PROJECT_CODE IN
+       <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			 #{item}
+		</foreach>  
+       <if test="pt != '' and pt != null">
+          AND NSI.DETECTION_CODE = #{pt}
+       </if>
+       AND NSI.SAMPLE_STATUS != '2'
+       GROUP BY AGR.CNAME
+	 )
+	</select>
+	
+	<!--各监测环节畜产品监测合格率情况-->
+	<select id="getMonitoringLinkLivestockQualifiedSituation" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+	SELECT
+	  MONITORING_LINKK AS monitoringLink,
+	  TO_CHAR(samplingCount) AS samplingCount,
+	  TO_CHAR(qualifiedCount) AS qualifiedCount,
+	  '' AS qualifiedRate
+	FROM(
+      SELECT
+           TST.TYPENAME AS MONITORING_LINKK,
+           count(1) AS samplingCount,
+           SUM(DECODE(T2.overStanderdCount,0,1,'',1,1)) AS qualifiedCount
+           FROM NKY_SAMPLING_INFO NSI
+           LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+           LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+           LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+           LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+	       LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+           LEFT JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+           ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+        WHERE NMP.PROJECT_CODE IN
+         <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			 #{item}
+		</foreach>  
+        <if test="pt != '' and pt != null">
+          AND NSI.DETECTION_CODE = #{pt}
+        </if>
+        AND TSTG.TYPEGROUPCODE = 'amonitoringLink'
+        AND NSI.SAMPLE_STATUS != '2'
+        GROUP BY TST.TYPENAME
+	   )
+	</select>
+	
+	<!--不同品种超标情况 统计表-->
+	<select id="getLivestockVarietyOverStandardSituation" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+	SELECT
+	  agrName,
+	  TO_CHAR(samplingCount) AS samplingCount,
+	  TO_CHAR(detetionCount) AS detetionCount,
+	  TO_CHAR(overStanderdCount) AS overStanderdCount,
+	  '' AS overStanderdRate,
+	  '' AS detetionRate
+	FROM
+	(
+       SELECT
+          AGR.CNAME AS agrName,
+          COUNT(1) AS samplingCount,
+          SUM(DECODE(T2.detetionCount,0,0,'',0,1)) AS detetionCount,
+          SUM(DECODE(T2.overStanderdCount,0,0,'',0,1)) AS overStanderdCount
+       FROM NKY_SAMPLING_INFO NSI
+       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+       INNER JOIN (
+             SELECT
+                  NDI.SAMPLE_CODE,
+                   SUM(
+                  CASE
+                     WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                     ELSE 0
+                  END
+                  ) AS detetionCount,
+                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+             FROM 
+             NKY_DETECTION_INFORMATION NDI
+             GROUP BY NDI.SAMPLE_CODE
+       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)  
+       WHERE NMP.PROJECT_CODE IN
+     	 <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+	    	 #{item}
+		 </foreach>  
+       <if test="pt != '' and pt != null">
+          AND NSI.DETECTION_CODE = #{pt}
+       </if>
+       AND NSI.SAMPLE_STATUS != '2'
+       GROUP BY AGR.CNAME
+	 )
+	</select>
+	<!-- chenyingqin↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ -->
+	
+	<!-- chenyingqin↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓20140306-->
+	<!-- 省辖市区畜禽产品监测结果 -->
+	<select id="getSampleOverProof1" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT *
+	FROM(
+		 SELECT
+		    RANK() OVER(ORDER BY qualifiedCount/samplingCount desc) AS rank,
+		    countyArea,
+		    SHOW_ORDER,
+		    TO_CHAR(samplingCount) AS samplingCount,
+		    TO_CHAR(qualifiedCount) AS qualifiedCount
+		  FROM
+			 (
+	       SELECT
+	          AREA.AREANAME AS countyArea,
+	          AREA.SHOW_ORDER,
+	          COUNT(1) AS samplingCount,
+	          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+	       LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+	       INNER JOIN (
+	             SELECT
+	                  NDI.SAMPLE_CODE,
+	                  SUM(
+	                    CASE
+	                       WHEN NDI.DETECTION_VALUE > 0 THEN 1
+	                       ELSE 0
+	                    END
+	                    ) AS detetionCount,
+	                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+	             FROM 
+	             NKY_DETECTION_INFORMATION NDI
+	             GROUP BY NDI.SAMPLE_CODE
+	       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+	       WHERE NMP.PROJECT_CODE IN
+	        <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND SUBSTR(NSI.COUNTY_CODE,5) = '01'
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+<!-- 		   ORDER BY AREA.SHOW_ORDER -->
+	  	 )
+	  ) ORDER BY SHOW_ORDER			
+	</select>
+	<!-- 省辖市区畜禽产品监测结果 -->
+    <select id="getSjzlLstForCounty1" resultType="java.lang.String" parameterType="java.util.HashMap">
+	SELECT
+       TST.TYPENAME AS monitoringLink
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+       where SUBSTR(NSI.COUNTY_CODE,5) = '01'
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+		  </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'allmonLink'
+         AND NSI.SAMPLE_STATUS != '2'
+        GROUP BY TST.TYPENAME
+        order by TST.TYPENAME
+	</select>
+	<!-- 省辖市区畜禽产品监测结果 -->
+	<select id="getSampleOverProofRight1" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT
+       AREA.AREANAME AS countyArea,
+       TST.TYPENAME AS monitoringLink,
+       COUNT(1) AS samplingCount,
+       SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+         LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+         LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+         where SUBSTR(NSI.COUNTY_CODE,5) = '01'
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+         <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'allmonLink'
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,TST.TYPENAME
+<!--          order by AREA.AREANAME,TST.TYPENAME -->
+ 		 order by AREA.SHOW_ORDER,TST.TYPENAME
+	</select>
+	
+	
+	<!-- 县级畜禽产品监测结果 -->
+	<select id="getSampleOverProof2" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT * FROM(
+		 SELECT
+		    RANK() OVER(ORDER BY qualifiedCount/samplingCount desc) AS rank,
+		    countyArea,
+		    SHOW_ORDER,
+		    TO_CHAR(samplingCount) AS samplingCount,
+		    TO_CHAR(qualifiedCount) AS qualifiedCount
+		  FROM
+			 (
+	       SELECT
+	          AREA.AREANAME AS countyArea,
+	          AREA.SHOW_ORDER,
+	          COUNT(1) AS samplingCount,
+	          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+	       INNER JOIN SYS_AREA_CODE AREA ON NSI.COUNTY_CODE = AREA.CODE
+	       INNER JOIN (
+	             SELECT
+	                  NDI.SAMPLE_CODE,
+	                  SUM(
+	                    CASE
+	                       WHEN NDI.DETECTION_VALUE > 0 THEN 1
+	                       ELSE 0
+	                    END
+	                    ) AS detetionCount,
+	                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+	             FROM 
+	             NKY_DETECTION_INFORMATION NDI
+	             GROUP BY NDI.SAMPLE_CODE
+	       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+	       WHERE NMP.PROJECT_CODE IN
+	        <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND SUBSTR(NSI.COUNTY_CODE,5) != '01'
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+		  
+	  	 )	
+	  	)  ORDER BY SHOW_ORDER		
+	</select>
+	<!-- 县级畜禽产品监测结果 -->
+    <select id="getSjzlLstForCounty2" resultType="java.lang.String" parameterType="java.util.HashMap">
+	SELECT
+       TST.TYPENAME AS monitoringLink
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+       where SUBSTR(NSI.COUNTY_CODE,5) != '01'
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'allmonLink'
+         AND NSI.SAMPLE_STATUS != '2'
+        GROUP BY TST.TYPENAME
+        order by TST.TYPENAME
+	</select>
+	<!-- 县级畜禽产品监测结果 -->
+	<select id="getSampleOverProofRight2" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT
+       AREA.AREANAME AS countyArea,
+       TST.TYPENAME AS monitoringLink,
+       COUNT(1) AS samplingCount,
+       SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+         INNER JOIN SYS_AREA_CODE AREA ON NSI.COUNTY_CODE = AREA.CODE
+         LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+         where SUBSTR(NSI.COUNTY_CODE,5) != '01'
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'allmonLink'
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,TST.TYPENAME
+<!--          order by AREA.AREANAME,TST.TYPENAME -->
+         order by AREA.SHOW_ORDER,TST.TYPENAME
+	</select>
+	
+	<!-- 全省生鲜乳监测结果 -->
+	<select id="getSampleOverProof3" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+		 SELECT
+		 	RANK() OVER(ORDER BY qualifiedCount/samplingCount desc) AS rank,
+		    countyArea,
+		    TO_CHAR(samplingCount) AS samplingCount,
+		    TO_CHAR(qualifiedCount) AS qualifiedCount
+		  FROM
+			 (
+	       SELECT
+	          AREA.AREANAME AS countyArea,
+	          COUNT(1) AS samplingCount,
+	          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+	       LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+	       INNER JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+           INNER JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+	       INNER JOIN (
+	             SELECT
+	                  NDI.SAMPLE_CODE,
+	                  SUM(
+	                    CASE
+	                       WHEN NDI.DETECTION_VALUE > 0 THEN 1
+	                       ELSE 0
+	                    END
+	                    ) AS detetionCount,
+	                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+	             FROM 
+	             NKY_DETECTION_INFORMATION NDI
+	             GROUP BY NDI.SAMPLE_CODE
+	       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+	       WHERE NMP.PROJECT_CODE IN
+	        <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+	       AND TSTG.TYPEGROUPCODE = 'freshMilkLink'
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+		   ORDER BY AREA.SHOW_ORDER
+	  	 )			
+	</select>
+	
+	<!-- 全省生鲜乳监测结果 -->
+    <select id="getSjzlLstForCounty3" resultType="java.lang.String" parameterType="java.util.HashMap">
+	SELECT
+       TST.TYPENAME AS monitoringLink
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         INNER JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         INNER JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+       where 1=1
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			    #{item}
+		  </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'freshMilkLink'
+         AND NSI.SAMPLE_STATUS != '2'
+        GROUP BY TST.TYPENAME
+        order by TST.TYPENAME
+
+	</select>
+	<!-- 全省生鲜乳监测结果 -->
+	<select id="getSampleOverProofRight3" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT
+       AREA.AREANAME AS countyArea,
+       TST.TYPENAME AS monitoringLink,
+       COUNT(1) AS samplingCount,
+       SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+         LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+         INNER JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         INNER JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+         where 1=1
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'freshMilkLink'
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,TST.TYPENAME
+<!--          order by AREA.AREANAME,TST.TYPENAME -->
+		 order by AREA.SHOW_ORDER,TST.TYPENAME
+	</select>
+	
+	<!-- 各市超标样品情况表 -->
+	<select id="getSampleOverProof4" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+		 SELECT
+		    countyArea,
+		    TO_CHAR(samplingCount) AS samplingCount,
+		    TO_CHAR(qualifiedCount) AS qualifiedCount
+		  FROM
+			 (
+	       SELECT
+	          AREA.AREANAME AS countyArea,
+	          COUNT(1) AS samplingCount,
+	          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+	       LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+	       INNER JOIN (
+	             SELECT
+	                  NDI.SAMPLE_CODE,
+	                  SUM(
+	                    CASE
+	                       WHEN NDI.DETECTION_VALUE > 0 THEN 1
+	                       ELSE 0
+	                    END
+	                    ) AS detetionCount,
+	                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+	             FROM 
+	             NKY_DETECTION_INFORMATION NDI
+	             GROUP BY NDI.SAMPLE_CODE
+	       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+	       WHERE NMP.PROJECT_CODE IN
+	        <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+		   ORDER BY AREA.SHOW_ORDER
+	  	 )			
+	</select>
+	<!-- 各市超标样品情况表 -->
+    <select id="getSjzlLstForCounty4" resultType="java.lang.String" parameterType="java.util.HashMap">
+	 SELECT
+       TST.TYPENAME AS monitoringLink
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+       where 
+       1=1
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+		 </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'allmonLink'
+         AND NSI.SAMPLE_STATUS != '2'
+        GROUP BY TST.TYPENAME
+        order by TST.TYPENAME
+	</select>
+	<!-- 各市超标样品情况表 -->
+	<select id="getSampleOverProofRight4" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT
+       AREA.AREANAME AS countyArea,
+       TST.TYPENAME AS monitoringLink,
+       COUNT(1) AS samplingCount,
+       SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+         LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+         LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NSI.MONITORING_LINK)
+         LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+         where 1=1
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+          <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach>  
+         AND TSTG.TYPEGROUPCODE = 'allmonLink'
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,TST.TYPENAME
+<!--          order by AREA.AREANAME,TST.TYPENAME -->
+          order by AREA.SHOW_ORDER,TST.TYPENAME
+	</select>
+	<!-- chenyingqin↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑20140306 -->
+	
+	
+	<!-- 新增统计表↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓20140402-->
+	<!-- 市各类畜产品监测合格率情况  -->
+	<select id="getCommLeftLiveStockSitu1" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+		 SELECT
+		    countyArea,
+		    TO_CHAR(samplingCount) AS samplingCount,
+		    TO_CHAR(qualifiedCount) AS qualifiedCount
+		  FROM
+			 (
+	       SELECT
+	          AREA.AREANAME AS countyArea,
+	          COUNT(1) AS samplingCount,
+	          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+	       LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+	       INNER JOIN (
+	             SELECT
+	                  NDI.SAMPLE_CODE,
+	                  SUM(
+	                    CASE
+	                       WHEN NDI.DETECTION_VALUE > 0 THEN 1
+	                       ELSE 0
+	                    END
+	                    ) AS detetionCount,
+	                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+	             FROM 
+	             NKY_DETECTION_INFORMATION NDI
+	             GROUP BY NDI.SAMPLE_CODE
+	       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+	       WHERE NMP.PROJECT_CODE IN
+	       	 <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach> 
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+		   ORDER BY AREA.SHOW_ORDER
+	  	 )			
+	</select>
+	<!-- 市各类畜产品监测合格率情况  -->
+    <select id="getCommHeaderLiveStockSitu1" resultType="java.lang.String" parameterType="java.util.HashMap">
+     SELECT
+        AGR.CNAME
+     FROM NKY_SAMPLING_INFO NSI
+     LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+     LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+     LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+     WHERE NMP.PROJECT_CODE IN
+     <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+	 </foreach> 
+      <if test="pt != '' and pt != null">
+         AND NSI.DETECTION_CODE = #{pt}
+      </if>
+	 AND NSI.SAMPLE_STATUS != '2'
+	 GROUP BY AGR.CNAME
+	</select>
+	<!-- 市各类畜产品监测合格率情况  -->
+	<select id="getCommRightLiveStockSitu1" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT
+       AREA.AREANAME AS countyArea,
+       AGR.CNAME AS agrName,
+       COUNT(1) AS samplingCount,
+       SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+         LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+         where 1=1
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+         	 <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach> 
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,AGR.CNAME
+<!--          order by AREA.AREANAME,AGR.CNAME -->
+         order by AREA.SHOW_ORDER,AGR.CNAME
+	</select>
+	
+	<!-- 区县各类畜产品监测合格率情况 -->
+	<select id="getCommLeftLiveStockSitu2" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+		 SELECT
+		    countyArea,
+		    TO_CHAR(samplingCount) AS samplingCount,
+		    TO_CHAR(qualifiedCount) AS qualifiedCount
+		  FROM
+			 (
+	       SELECT
+	          AREA.AREANAME AS countyArea,
+	          COUNT(1) AS samplingCount,
+	          SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+	       INNER JOIN SYS_AREA_CODE AREA ON NSI.COUNTY_CODE = AREA.CODE
+	       INNER JOIN (
+	             SELECT
+	                  NDI.SAMPLE_CODE,
+	                  SUM(
+	                    CASE
+	                       WHEN NDI.DETECTION_VALUE > 0 THEN 1
+	                       ELSE 0
+	                    END
+	                    ) AS detetionCount,
+	                  SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+	             FROM 
+	             NKY_DETECTION_INFORMATION NDI
+	             GROUP BY NDI.SAMPLE_CODE
+	       ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+	       WHERE NMP.PROJECT_CODE IN
+	       	 <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			     #{item}
+			 </foreach> 
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND SUBSTR(NSI.COUNTY_CODE,5) != '01' 
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+		   ORDER BY AREA.SHOW_ORDER
+	  	 )			
+	</select>
+	<!-- 区县各类畜产品监测合格率情况-->
+    <select id="getCommHeaderLiveStockSitu2" resultType="java.lang.String" parameterType="java.util.HashMap">
+     SELECT
+        AGR.CNAME
+     FROM NKY_SAMPLING_INFO NSI
+     LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+     LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+     LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+     WHERE NMP.PROJECT_CODE IN
+     	<foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach> 
+      <if test="pt != '' and pt != null">
+         AND NSI.DETECTION_CODE = #{pt}
+      </if>
+	 AND NSI.SAMPLE_STATUS != '2'
+	 GROUP BY AGR.CNAME
+	</select>
+	<!-- 区县各类畜产品监测合格率情况  -->
+	<select id="getCommRightLiveStockSitu2" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	SELECT
+       AREA.AREANAME AS countyArea,
+       AGR.CNAME AS agrName,
+       COUNT(1) AS samplingCount,
+       SUM(DECODE(T2.overStanderdCount,0,1,'',1,0)) AS qualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+         INNER JOIN SYS_AREA_CODE AREA ON NSI.COUNTY_CODE = AREA.CODE
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               GROUP BY NDI.SAMPLE_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE)
+         where 1=1
+        <if test="pt != '' and pt != null">
+	        AND NSI.DETECTION_CODE = #{pt}
+	     </if>
+         and NMP.PROJECT_CODE IN
+         <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+         AND SUBSTR(NSI.COUNTY_CODE,5) != '01'
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,AGR.CNAME
+<!--          order by AREA.AREANAME,AGR.CNAME -->
+         order by AREA.SHOW_ORDER,AGR.CNAME
+	</select>
+	
+	
+	<!-- 市各监测项目不合格情况-->
+	<select id="getCommLeftDetectionItemSitu1" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	      SELECT
+	          AREA.AREANAME AS countyArea
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+<!-- 	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE) -->
+	       LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+	       WHERE NMP.PROJECT_CODE IN
+	      <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND NSI.SAMPLE_STATUS != '2'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+	       ORDER BY AREA.SHOW_ORDER
+	</select>
+	<!-- 市各监测项目不合格情况  -->
+    <select id="getCommHeaderDetectionItemSitu1" resultType="java.lang.String" parameterType="java.util.HashMap">
+      SELECT
+			PD.POPCNAME AS pollName
+		FROM 
+			NKY_DETECTION_INFORMATION NDI
+			INNER JOIN NKY_SAMPLING_INFO NSI ON NSI.SAMPLE_CODE = NDI.SAMPLE_CODE
+			INNER JOIN NKY_MONITORING_TASK NMT ON NSI.TASK_CODE = NMT.TASK_CODE
+			INNER JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+			LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+			LEFT JOIN V_NKY_MONITORING_POLL PD ON PD.CAS = NDI.CAS_CODE AND PD.PROJECT_CODE = NMP.PROJECT_CODE
+		WHERE
+			NMT.PROJECT_CODE IN
+		 <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+           <if test="pt != '' and pt != null">
+             AND NSI.DETECTION_CODE = #{pt}
+           </if>
+	     Group by PD.CAS,PD.POPCNAME
+   		 ORDER BY PD.CAS,PD.POPCNAME  
+	</select>
+	<!-- 市各监测项目不合格情况  -->
+	<select id="getCommRightDetectionItemSitu1" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+   SELECT
+       AREA.AREANAME AS countyArea,
+       T2.POPCNAME AS pollName,
+       SUM(DECODE(T2.detetionCount,0,0,'',0,1)) AS detectionCount,
+       SUM(DECODE(T2.overStanderdCount,0,0,'',0,1)) AS unQualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         LEFT JOIN SYS_AREA_CODE AREA ON NSI.CITY_CODE = AREA.CODE
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    PD.CAS,
+                    PD.POPCNAME,
+                    PD.PROJECT_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               LEFT JOIN V_NKY_MONITORING_POLL PD ON PD.CAS = NDI.CAS_CODE
+               GROUP BY NDI.SAMPLE_CODE,PD.CAS,PD.POPCNAME,PD.PROJECT_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE AND T2.PROJECT_CODE = NMP.PROJECT_CODE)
+         where 1=1
+        <if test="pt != '' and pt != null">
+          AND NSI.DETECTION_CODE = #{pt}
+       </if>
+         AND NMP.PROJECT_CODE IN
+		 <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+         AND NSI.SAMPLE_STATUS != '2'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,T2.CAS,T2.POPCNAME
+<!--          order by AREA.AREANAME,T2.CAS,T2.POPCNAME -->
+         order by AREA.SHOW_ORDER,T2.CAS,T2.POPCNAME
+	</select>
+	
+	<!-- 区县各监测项目不合格情况-->
+	<select id="getCommLeftDetectionItemSitu2" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+	      SELECT
+	          AREA.AREANAME AS countyArea
+	       FROM NKY_SAMPLING_INFO NSI
+	       LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+	       LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	       LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+<!-- 	       LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE) -->
+	       INNER JOIN SYS_AREA_CODE AREA ON NSI.COUNTY_CODE = AREA.CODE
+	       WHERE NMP.PROJECT_CODE IN
+	      <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+	      <if test="pt != '' and pt != null">
+	          AND NSI.DETECTION_CODE = #{pt}
+	       </if>
+	       AND NSI.SAMPLE_STATUS != '2'
+	       AND SUBSTR(NSI.COUNTY_CODE,5) != '01' 
+	       AND AREA.flag = '0'
+	       GROUP BY AREA.AREANAME,AREA.SHOW_ORDER
+<!-- 	       ORDER BY AREA.AREANAME -->
+	       ORDER BY AREA.SHOW_ORDER
+	</select>
+	<!-- 区县各监测项目不合格情况-->
+    <select id="getCommHeaderDetectionItemSitu2" resultType="java.lang.String" parameterType="java.util.HashMap">
+      SELECT
+			PD.POPCNAME AS pollName
+		FROM 
+			NKY_DETECTION_INFORMATION NDI
+			INNER JOIN NKY_SAMPLING_INFO NSI ON NSI.SAMPLE_CODE = NDI.SAMPLE_CODE
+			INNER JOIN NKY_MONITORING_TASK NMT ON NSI.TASK_CODE = NMT.TASK_CODE
+			INNER JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+			LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+			LEFT JOIN V_NKY_MONITORING_POLL PD ON PD.CAS = NDI.CAS_CODE AND PD.PROJECT_CODE = NMP.PROJECT_CODE
+		WHERE
+			NMT.PROJECT_CODE IN
+		<foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+           <if test="pt != '' and pt != null">
+             AND NSI.DETECTION_CODE = #{pt}
+           </if>
+	     Group by PD.CAS,PD.POPCNAME
+   		 ORDER BY PD.CAS,PD.POPCNAME  
+	</select>
+	<!-- 区县各监测项目不合格情况-->
+	<select id="getCommRightDetectionItemSitu2" resultType="com.hippo.nky.entity.report.SampleOverProofEntity" parameterType="java.util.HashMap">
+   SELECT
+       AREA.AREANAME AS countyArea,
+       T2.POPCNAME AS pollName,
+       SUM(DECODE(T2.detetionCount,0,0,'',0,1)) AS detectionCount,
+       SUM(DECODE(T2.overStanderdCount,0,0,'',0,1)) AS unQualifiedCount 
+         FROM NKY_SAMPLING_INFO NSI
+         LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+         LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+         LEFT JOIN NkY_MONITORING_PLAN NMPL ON(NMPL.PLAN_CODE = NMP.PLAN_CODE)
+         INNER JOIN SYS_AREA_CODE AREA ON NSI.COUNTY_CODE = AREA.CODE
+         INNER JOIN (
+               SELECT
+                    NDI.SAMPLE_CODE,
+                    PD.CAS,
+                    PD.POPCNAME,
+                    PD.PROJECT_CODE,
+                    SUM(
+                      CASE
+                         WHEN NDI.DETECTION_VALUE > 0 THEN 1
+                         ELSE 0
+                      END
+                      ) AS detetionCount,
+                    SUM(DECODE(NDI.IS_OVERPROOF,'1', 1, 0)) AS overStanderdCount
+               FROM 
+               NKY_DETECTION_INFORMATION NDI
+               LEFT JOIN V_NKY_MONITORING_POLL PD ON PD.CAS = NDI.CAS_CODE
+               GROUP BY NDI.SAMPLE_CODE,PD.CAS,PD.POPCNAME,PD.PROJECT_CODE
+         ) T2 ON (T2.SAMPLE_CODE = NSI.SAMPLE_CODE and T2.PROJECT_CODE = NMP.PROJECT_CODE)
+         where 1=1
+        <if test="pt != '' and pt != null">
+          AND NSI.DETECTION_CODE = #{pt}
+       </if>
+         and NMP.PROJECT_CODE IN
+         <foreach collection="projectCode" index="index" item="item" open="(" separator="," close=")">
+		     #{item}
+		 </foreach> 
+         AND SUBSTR(NSI.COUNTY_CODE,5) != '01' 
+         AND NSI.SAMPLE_STATUS != '2'
+         AND AREA.flag = '0'
+         GROUP BY AREA.AREANAME,AREA.SHOW_ORDER,T2.CAS,T2.POPCNAME
+<!--          order by AREA.AREANAME,T2.CAS,T2.POPCNAME -->
+         order by AREA.SHOW_ORDER,T2.CAS,T2.POPCNAME
+	</select>
+	<!-- 新增统计表↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑20140402 -->
+	
+	
+	
+	<select id="getOverProofSampleInfoCount" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+		SELECT COUNT(VNSI.D_CODE)
+		  FROM NKY_SAMPLING_INFO VNSI
+		 INNER JOIN NKY_MONITORING_TASK NMT ON NMT.TASK_CODE = VNSI.TASK_CODE
+		 INNER JOIN NKY_MONITORING_PROJECT NMP ON NMP.PROJECT_CODE = NMT.PROJECT_CODE
+		 INNER JOIN NKY_MONITORING_PLAN NMPL ON NMPL.PLAN_CODE = NMP.PLAN_CODE
+		 INNER JOIN (SELECT NSI.ID AS ID,
+		                    STR_SUM(NPD.POPCNAME || ':' ||
+		                            to_char(NDI.DETECTION_VALUE, 'FM9990.099999') || ',') AS POLL_VALUE
+		               FROM NKY_SAMPLING_INFO NSI
+		              INNER JOIN NKY_DETECTION_INFORMATION NDI ON NDI.SAMPLE_CODE = NSI.SAMPLE_CODE
+		               LEFT JOIN NKY_POLL_DICTIONARY NPD ON NPD.CAS = NDI.CAS_CODE
+		              WHERE NDI.IS_OVERPROOF = '1'
+		              GROUP BY NSI.ID) POLL ON POLL.ID = VNSI.ID
+		  LEFT JOIN NKY_ORGANIZATION_INFO NOI ON NOI.CODE = VNSI.DETECTION_CODE
+		  LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = VNSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+		 WHERE VNSI.SAMPLE_STATUS != '2'
+		   AND NMP.PROJECT_CODE = #{projectCode}
+		   <!-- 权限 -->
+		   <if test="pt != '' and pt != null">
+		   AND VNSI.DETECTION_CODE = #{pt}
+		   </if>
+	</select>
+	
+	<select id="getOverProofSampleInfo" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT T.* 
+		  FROM (
+				SELECT VNSI.D_CODE                                             AS D_CODE
+				       ,VNSI.UNIT_FULLNAME                                     AS UNIT_FULLNAME
+				       ,AGR.CNAME                                              AS CNAME
+				       ,SUBSTR(POLL.POLL_VALUE,1,LENGTH(POLL.POLL_VALUE)-1)    AS POLL_VALUE
+				       ,NOI.OGRNAME                                            AS OGRNAME
+				       ,ROWNUM                                                 AS RN
+				  FROM NKY_SAMPLING_INFO VNSI
+				 INNER JOIN NKY_MONITORING_TASK NMT ON NMT.TASK_CODE = VNSI.TASK_CODE
+				 INNER JOIN NKY_MONITORING_PROJECT NMP ON NMP.PROJECT_CODE = NMT.PROJECT_CODE
+				 INNER JOIN NKY_MONITORING_PLAN NMPL ON NMPL.PLAN_CODE = NMP.PLAN_CODE
+				 INNER JOIN (SELECT NSI.ID AS ID,
+				                    STR_SUM(NPD.POPCNAME || ':' ||
+				                            to_char(NDI.DETECTION_VALUE, 'FM9990.099999') || ',') AS POLL_VALUE
+				               FROM NKY_SAMPLING_INFO NSI
+				              INNER JOIN NKY_DETECTION_INFORMATION NDI ON NDI.SAMPLE_CODE = NSI.SAMPLE_CODE
+				               LEFT JOIN NKY_POLL_DICTIONARY NPD ON NPD.CAS = NDI.CAS_CODE
+				              WHERE NDI.IS_OVERPROOF = '1'
+				              GROUP BY NSI.ID) POLL ON POLL.ID = VNSI.ID
+				  LEFT JOIN NKY_ORGANIZATION_INFO NOI ON NOI.CODE = VNSI.DETECTION_CODE
+				  LEFT JOIN V_NKY_MONITORING_AGR AGR ON (AGR.CODE = VNSI.AGR_CODE AND AGR.PROJECT_CODE = NMP.PROJECT_CODE)
+				 WHERE VNSI.SAMPLE_STATUS != '2'
+				   <!-- 项目code -->
+				   AND NMP.PROJECT_CODE = #{projectCode}
+				   <!-- 权限 -->
+				   <if test="pt != '' and pt != null">
+				   AND VNSI.DETECTION_CODE = #{pt}
+				   </if>
+		) T
+		 WHERE RN > #{beginIndex} AND RN <![CDATA[ <= ]]>  #{endIndex}
+	</select>
+	<!--3 区县 2 辖市/ 县级畜禽产品监测结果/省辖市区畜禽产品监测结果  共用  start -->
+	<select id="getSjzlLstForCounty" resultMap="plantResult" parameterType="java.util.HashMap">
+		SELECT distinct t.typecode,t.typename FROM V_NKY_county_SAMPLE vnns
+			INNER JOIN t_s_type t ON (t.typecode = vnns.monitoring_link)
+			LEFT JOIN t_s_typegroup tp ON (tp.id = t.typegroupid) 
+		<where>
+			<choose>
+				<when test="isDis == 3">and vnns.code NOT LIKE '____01'</when>
+				<otherwise>vnns.code LIKE '____01'</otherwise>
+			</choose>
+			AND vnns.PROJECT_CODE = #{projectCode}
+			and tp.typegroupcode = 'amonitoringLink'
+			ORDER BY t.typecode
+		</where>
+	</select>
+	
+	<select id="getSampleOverProof" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+			SELECT *
+				  FROM (SELECT NVL(to_char(T2.CLSNO), ' ') as CLSNO,T.CODE, T.AREANAME, T2.TOTALSUM, T2.ISQUALSUM, T2.PCTSUM
+				          FROM (SELECT S_AREA.CODE, S_AREA.AREANAME FROM SYS_AREA_CODE S_AREA
+				          <where>
+							<choose>
+								<when test="isDis == 3">and S_AREA.code NOT LIKE '____01'</when>
+								<otherwise>S_AREA.code LIKE '____01'</otherwise>
+							</choose>
+			                   AND S_AREA.CODE NOT LIKE '____00'
+			                <!--  AND s_area.code LIKE #{areaCode} || '%' -->
+				          </where>   
+				                 GROUP BY S_AREA.CODE, S_AREA.AREANAME
+				                 ORDER BY S_AREA.CODE) T
+				          INNER JOIN (SELECT DECODE(VNCS.CODE, NULL, '汇总', VNCS.CODE) AS CODE,
+				                           SUM(VNCS.TOTALCOUNT) AS TOTALSUM,
+				                           NVL(SUM(NSI2.ISQUAL),0) AS ISQUALSUM,
+	                           			   100 * ROUND(NVL(SUM(NSI2.ISQUAL), 0) / NVL(SUM(VNCS.TOTALCOUNT), 0),3) AS PCTSUM,
+                           				   RANK() OVER(ORDER BY(NVL(SUM(NSI2.ISQUAL), 0) / SUM(VNCS.TOTALCOUNT)) DESC) AS CLSNO
+				                      FROM V_NKY_COUNTY_SAMPLE VNCS
+				                      LEFT JOIN ( 
+	                           			SELECT VNCS2.CODE,COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_COUNTY_SAMPLE VNCS2  
+										WHERE VNCS2.CODE IS NOT NULL
+			                 			<if test="industryCode != '' and industryCode != null ">
+											AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+										</if>
+										<if test="pt != '' and pt != null ">
+											AND VNCS2.DETECTION_CODE = #{pt}
+										</if> 
+										AND VNCS2.IS_QUALIFIED = 0 
+	                          			AND vncs2.sample_status = 5
+	                          			AND VNCS2.PROJECT_CODE = #{projectCode}
+				                        GROUP BY vncs2.code
+				                      ) NSI2 ON(NSI2.CODE = VNCS.CODE)
+				                     <where>
+							            <choose>
+											<when test="isDis == 3">AND VNCS.CODE NOT LIKE '____01'</when>
+											<otherwise>VNCS.CODE LIKE '____01'</otherwise>
+										</choose>
+										AND vncs.sample_status = 5
+										<if test="industryCode != '' and industryCode != null ">
+											AND VNCS.INDUSTRY_CODE = #{industryCode} 
+										</if>
+										<if test="pt != '' and pt != null ">
+											AND VNCS.DETECTION_CODE = #{pt}
+										</if>
+					      				AND VNCS.PROJECT_CODE = #{projectCode}
+				                     	<!-- AND vncs.code LIKE #{areaCode} || '%'-->
+				                     </where>
+				                     GROUP BY VNCS.CODE) T2 ON (T2.CODE = T.CODE)
+				         ORDER BY T.CODE) T
+				UNION ALL
+				SELECT ' ' AS CLSNO,TT.CODE, '' AS AREANAME, TT.TOTALSUM, TT.ISQUALSUM, TT.PCTSUM
+				  FROM (SELECT DECODE(VNCS.CODE, NULL, '汇总', VNCS.CODE) AS CODE,
+				               SUM(VNCS.TOTALCOUNT) AS TOTALSUM,
+				               NVL(SUM(NSI2.ISQUAL),0) AS ISQUALSUM,
+               				   100*ROUND(NVL(SUM(NSI2.ISQUAL),0)/NVL(SUM(VNCS.TOTALCOUNT),0),3) AS PCTSUM
+				          FROM V_NKY_COUNTY_SAMPLE VNCS
+				          LEFT JOIN ( 
+                           		SELECT VNCS2.CODE,COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_COUNTY_SAMPLE VNCS2  
+                           			WHERE VNCS2.CODE IS NOT NULL 
+                          			AND VNCS2.IS_QUALIFIED = 0 
+                          			<if test="industryCode != '' and industryCode != null ">
+										AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+									</if>
+									<if test="pt != '' and pt != null ">
+										AND VNCS2.DETECTION_CODE = #{pt}
+									</if>
+                          			AND VNCS2.SAMPLE_STATUS = 5
+                          			AND VNCS2.PROJECT_CODE = #{projectCode}
+                           		GROUP BY VNCS2.CODE
+                      		) NSI2 ON(NSI2.CODE = VNCS.CODE)
+				         <where>
+				            <choose>
+								<when test="isDis == 3">and vncs.code NOT LIKE '____01'</when>
+								<otherwise>vncs.code LIKE '____01'</otherwise>
+							</choose>
+							<if test="industryCode != '' and industryCode != null ">
+								AND VNCS.INDUSTRY_CODE = #{industryCode} 
+							</if>
+							<if test="pt != '' and pt != null ">
+								and vncs.detection_code = #{pt}
+							</if>
+							AND vncs.sample_status = 5
+		      				AND VNCS.PROJECT_CODE = #{projectCode}
+	                     <!-- AND vncs.code LIKE #{areaCode} || '%'-->
+	                     </where>
+				         GROUP BY ROLLUP(VNCS.CODE)) TT
+				 WHERE TT.CODE = '汇总'
+	</select>
+	
+	<select id="getSampleOverProofRight" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT *
+		  FROM (SELECT T.CODE,
+		               T.AREANAME,
+		               T2.TYPENAME,
+		               T2.TOTALSUM,
+		               T2.ISQUALSUM,
+		               T2.PCTSUM
+		          FROM (SELECT S_AREA.CODE, S_AREA.AREANAME
+		                  FROM SYS_AREA_CODE S_AREA
+		                  <where>
+							<choose>
+								<when test="isDis == 3">and S_AREA.code NOT LIKE '____01'</when>
+								<otherwise>S_AREA.code LIKE '____01'</otherwise>
+							</choose>
+			                   AND S_AREA.CODE NOT LIKE '____00'
+			                <!--  AND s_area.code LIKE #{areaCode} || '%' -->
+				          </where>  
+		                 GROUP BY S_AREA.CODE, S_AREA.AREANAME
+		                 ORDER BY S_AREA.CODE) T
+		          LEFT JOIN (SELECT VNCS.CODE,
+		                           T.TYPENAME,
+		                           SUM(VNCS.TOTALCOUNT) AS TOTALSUM,
+		                           NVL(SUM(NSI2.ISQUAL),0) AS ISQUALSUM,
+	                           	   100 * ROUND(NVL(SUM(NSI2.ISQUAL), 0) / NVL(SUM(VNCS.TOTALCOUNT), 0),3) AS PCTSUM
+		                      FROM V_NKY_COUNTY_SAMPLE VNCS
+		                      LEFT JOIN ( 
+	                           		SELECT VNCS2.CODE,COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_COUNTY_SAMPLE VNCS2  
+										WHERE VNCS2.CODE IS NOT NULL
+			                 			<if test="industryCode != '' and industryCode != null ">
+											AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+										</if>
+										<if test="pt != '' and pt != null ">
+											AND VNCS2.DETECTION_CODE = #{pt}
+										</if> 
+										AND VNCS2.IS_QUALIFIED = 0 
+	                          			AND vncs2.sample_status = 5
+	                          			AND VNCS2.PROJECT_CODE = #{projectCode}
+				                    GROUP BY vncs2.code
+				              ) NSI2 ON(NSI2.CODE = VNCS.CODE)
+		                      LEFT JOIN T_S_TYPE T ON (T.TYPECODE = VNCS.MONITORING_LINK)
+		                      LEFT JOIN T_S_TYPEGROUP TP ON (TP.ID = T.TYPEGROUPID)
+		                    <where>
+								<choose>
+									<when test="isDis == 3">and VNCS.code NOT LIKE '____01'</when>
+									<otherwise>VNCS.code LIKE '____01'</otherwise>
+								</choose>
+								AND VNCS.SAMPLE_STATUS = 5
+								<if test="industryCode != '' and industryCode != null ">
+									AND VNCS.INDUSTRY_CODE = #{industryCode} 
+								</if>
+								<if test="pt != '' and pt != null ">
+									AND VNCS.DETECTION_CODE = #{pt}
+								</if>
+		                       	AND VNCS.MONITORING_LINK = #{monitoringLink}
+		                       	AND TP.TYPEGROUPCODE = 'amonitoringLink'
+			      				AND VNCS.PROJECT_CODE = #{projectCode} 
+		                       <!--  AND VNCS.code LIKE #{areaCode} || '%' -->
+							</where>
+		                     GROUP BY VNCS.CODE, T.TYPENAME) T2 ON (T.CODE = T2.CODE)
+		         ORDER BY T.CODE)
+			UNION ALL
+			SELECT T3.CODE,
+			       T3.AREANAME,
+			       T3.TYPENAME,
+			       T3.TOTALSUM,
+			       T3.ISQUALSUM,
+			       T3.PCTSUM
+			  FROM (SELECT DECODE(VNCS.CODE, NULL, '', VNCS.CODE) AS CODE,
+			               '' AS AREANAME,
+			               '' AS TYPENAME,
+			               SUM(VNCS.TOTALCOUNT) AS TOTALSUM,
+                           NVL(SUM(NSI2.ISQUAL),0) AS ISQUALSUM,
+                           100 * ROUND(NVL(SUM(NSI2.ISQUAL), 0) / NVL(SUM(VNCS.TOTALCOUNT), 0),3) AS PCTSUM
+			          FROM V_NKY_COUNTY_SAMPLE VNCS
+			          LEFT JOIN ( 
+                  		SELECT VNCS2.CODE,COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_COUNTY_SAMPLE VNCS2  
+							WHERE VNCS2.CODE IS NOT NULL
+                 			<if test="industryCode != '' and industryCode != null ">
+								AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+							</if>
+							<if test="pt != '' and pt != null ">
+								AND VNCS2.DETECTION_CODE = #{pt}
+							</if> 
+							AND VNCS2.IS_QUALIFIED = 0 
+                   			AND VNCS2.SAMPLE_STATUS = 5
+                   			AND VNCS2.PROJECT_CODE = #{projectCode}
+	                    GROUP BY vncs2.code
+				      ) NSI2 ON(NSI2.CODE = VNCS.CODE)
+			          LEFT JOIN T_S_TYPE T ON (T.TYPECODE = VNCS.MONITORING_LINK)
+			          LEFT JOIN T_S_TYPEGROUP TP ON (TP.ID = T.TYPEGROUPID)
+	         		 <where>
+						<choose>
+							<when test="isDis == 3">and VNCS.code NOT LIKE '____01'</when>
+							<otherwise>vncs.code LIKE '____01'</otherwise>
+						</choose>
+						AND VNCS.SAMPLE_STATUS = 5
+						<if test="industryCode != '' and industryCode != null ">
+							AND VNCS.INDUSTRY_CODE = #{industryCode} 
+						</if>
+						<if test="pt != '' and pt != null ">
+							AND VNCS.DETECTION_CODE = #{pt}
+						</if>
+                       	AND VNCS.monitoring_link = #{monitoringLink}
+                       	AND TP.TYPEGROUPCODE = 'amonitoringLink'
+	      				AND VNCS.PROJECT_CODE = #{projectCode} 
+                       <!--  AND VNCS.code LIKE #{areaCode} || '%' -->
+					 </where>
+			         GROUP BY ROLLUP(VNCS.CODE)
+			        ) T3
+			 WHERE T3.CODE IS NULL
+	</select>
+
+	<select id="getParentCityName" resultType="java.lang.String" parameterType="java.util.HashMap">
+		SELECT t.areaname FROM SYS_AREA_CODE t WHERE t.id = (SELECT area.parentareaid FROM SYS_AREA_CODE area WHERE area.code = #{areaCode})
+	</select>
+	<!-- 县级畜禽产品监测结果/省辖市区畜禽产品监测结果  共用  end -->
+	<!-- 各市超标样品情况表 start -->
+	<select id="getCitySampleOverProof" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+        SELECT t.code,t.areaname,t2.totalSum,t2.isQualSum,t2.pctSum  FROM(
+                 SELECT substr(s_area.code,1,4) AS code,s_area.areaname FROM SYS_AREA_CODE s_area
+                    WHERE 1=1
+                        AND s_area.code LIKE '____00' 
+                        AND s_area.code != '320000'
+                       <!--  AND substr(s_area.code,1,4) = #{areaCode} -->
+                     GROUP BY s_area.code,s_area.areaname
+                     ORDER BY s_area.code 
+              ) t
+              LEFT JOIN            
+              (SELECT vncs.code,SUM(vncs.totalCount) AS totalSum,sum(vncs.isQualCount) AS isQualSum 
+                    ,SUM((CASE WHEN vncs.isQualCount = 0 THEN 0 WHEN vncs.isQualCount != 0 THEN 100*round((vncs.totalCount/vncs.isQualCount),3) END)) AS PCTSUM
+                    FROM  V_NKY_city_SAMPLE vncs
+                    WHERE 1=1 
+						AND VNCS.PROJECT_CODE = #{projectCode}
+                      	<!-- AND VNCS.CODE = #{areaCode} 预留-->
+                    GROUP BY vncs.code
+                    ORDER BY vncs.code
+        ) t2 ON (t2.code = t.code ) 
+		) t3  
+		UNION ALL 
+        SELECT T4.CODE,
+                   '' AS AREANAME,
+                   T4.TOTALSUM,
+                   T4.ISQUALSUM,
+                   T4.PCTSUM
+              FROM (
+              SELECT decode(vncs.code,NULL,'汇总',vncs.code) AS code,SUM(vncs.totalCount) AS totalSum,sum(vncs.isQualCount) AS isQualSum 
+                    ,SUM((CASE WHEN vncs.isQualCount = 0 THEN 0 WHEN vncs.isQualCount != 0 THEN 100*round((vncs.totalCount/vncs.isQualCount),3) END)) AS PCTSUM
+                    FROM  V_NKY_city_SAMPLE vncs
+                  WHERE 1=1 
+					AND VNCS.PROJECT_CODE = #{projectCode}
+                  	<!-- AND VNCS.CODE = #{areaCode} 预留-->
+            GROUP BY ROLLUP(vncs.CODE)
+		) t4     
+		WHERE T4.CODE = '汇总'
+	</select>
+	
+	<select id="getSjzlLstForCity" resultMap="plantResult" parameterType="java.util.HashMap">
+		SELECT distinct t.typecode,t.typename FROM V_NKY_city_SAMPLE vncs
+      		INNER JOIN t_s_type t ON (t.typecode = vncs.monitoring_link)
+      		INNER JOIN t_s_typegroup tp ON (tp.id = t.typegroupid) 
+		<where>
+			AND VNCS.PROJECT_CODE = #{projectCode}
+			and tp.typegroupcode = 'amonitoringLink'
+		</where>
+		ORDER BY t.typecode
+	</select>
+	
+	<select id="getCityOverProofRight" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (   
+	       SELECT t.code,t.areaname,t2.typename,t2.totalSum,t2.isQualSum,t2.pctSum FROM (
+	             SELECT SUBSTR(s_area.code,1,4) AS code,s_area.areaname FROM SYS_AREA_CODE s_area
+	                    WHERE 1=1
+	                        AND s_area.code LIKE '____00' 
+	                        AND s_area.code != '320000'
+	                      	<!-- AND SUBSTR(s_area.code,1,4) = #{areaCode} -->
+	                     GROUP BY s_area.code,s_area.areaname
+	                     ORDER BY  s_area.code 
+	         ) t
+	         LEFT JOIN 
+       		(
+               SELECT vncs.code,t.typename,SUM(vncs.totalCount) AS totalSum,sum(vncs.isQualCount) AS isQualSum 
+                    ,SUM((CASE WHEN vncs.isQualCount = 0 THEN 0 WHEN vncs.isQualCount != 0 THEN 100*round((vncs.totalCount/vncs.isQualCount),3) END)) AS PCTSUM
+                    FROM  V_NKY_city_SAMPLE vncs
+					LEFT JOIN t_s_type t ON (t.typecode = vncs.monitoring_link)
+					LEFT JOIN t_s_typegroup tp ON (tp.id = t.typegroupid)  
+           			WHERE 1=1
+           			AND vncs.monitoring_link = #{monitoringLink}
+           			AND TP.TYPEGROUPCODE = 'amonitoringLink'
+					AND VNCS.PROJECT_CODE = #{projectCode}
+					<!-- AND VNCS.CODE = #{areaCode} 预留-->
+     			GROUP BY vncs.code,t.typename
+     		) t2 ON (t.code = t2.code)
+    			ORDER BY t.code)
+		    UNION ALL
+		    SELECT t3.code,'' AS areaname,'' AS typename,t3.totalSum,t3.isQualSum,t3.pctSum FROM (
+		        SELECT vncs.code,SUM(vncs.totalCount) AS totalSum,sum(vncs.isQualCount) AS isQualSum 
+		                    ,SUM((CASE WHEN vncs.isQualCount = 0 THEN 0 WHEN vncs.isQualCount != 0 THEN 100*round((vncs.totalCount/vncs.isQualCount),3) END)) AS PCTSUM
+		                    FROM  V_NKY_city_SAMPLE vncs
+		        LEFT JOIN t_s_type t ON (t.typecode = vncs.monitoring_link)
+		        LEFT JOIN t_s_typegroup tp ON (tp.id = t.typegroupid)  
+		        WHERE 1=1
+						AND vncs.monitoring_link = #{monitoringLink}
+		                AND TP.TYPEGROUPCODE = 'amonitoringLink'
+						AND VNCS.PROJECT_CODE = #{projectCode}
+		       			<!-- AND VNCS.CODE = #{areaCode} 预留-->
+		    GROUP BY ROLLUP(vncs.code)
+			) t3 WHERE t3.code IS NULL
+	</select>
+	<!-- 各市超标样品情况表 end -->
+	
+	<!-- 全省生鲜乳监测结果 start -->
+	<select id="getProvinceFreshMilkMonitor" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+        SELECT nvl(to_char(t2.CLSNO),' ') as CLSNO,t.code,t.areaname,t2.totalSum,t2.isQualSum,t2.pctSum FROM(
+                 SELECT substr(s_area.code,1,4) AS code,s_area.areaname FROM SYS_AREA_CODE s_area
+                    WHERE 1=1
+                        AND s_area.code LIKE '____00' 
+                        AND s_area.code != '320000'
+                       <!--  AND substr(s_area.code,1,4) = #{areaCode} -->
+                     GROUP BY s_area.code,s_area.areaname
+                     ORDER BY s_area.code 
+              ) t
+              INNER JOIN            
+              (SELECT vncs.code,SUM(vncs.totalCount) AS totalSum,NVL(NSI2.ISQUAL, 0) AS ISQUALSUM,
+                    NVL((CASE WHEN NSI2.ISQUAL = 0 THEN 0 WHEN NSI2.ISQUAL != 0 THEN 100 * ROUND((NSI2.ISQUAL / SUM(VNCS.TOTALCOUNT)), 3) END), 0) AS PCTSUM
+                    ,RANK() OVER(ORDER BY (NSI2.ISQUAL / SUM(VNCS.TOTALCOUNT)) DESC) AS CLSNO
+                    FROM  V_NKY_city_SAMPLE vncs
+                    LEFT JOIN (SELECT VNCS2.CODE, COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_CITY_SAMPLE VNCS2
+		                WHERE VNCS2.SAMPLE_STATUS = 5 AND VNCS2.IS_QUALIFIED = 0
+						<if test="industryCode != '' and industryCode != null ">
+							AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+					   </if>
+					   <if test="pt != '' and pt != null ">
+							AND VNCS2.DETECTION_CODE = #{pt}
+					   </if>
+                      AND VNCS2.PROJECT_CODE = #{projectCode}
+                    GROUP BY VNCS2.CODE) NSI2 ON (NSI2.CODE = VNCS.CODE)
+                    WHERE 1=1 
+                   		AND vncs.sample_status = 5
+           			   <if test="industryCode != '' and industryCode != null ">
+							AND VNCS.INDUSTRY_CODE = #{industryCode} 
+					   </if>
+					   <if test="pt != '' and pt != null ">
+							AND VNCS.DETECTION_CODE = #{pt}
+					   </if>
+						AND VNCS.PROJECT_CODE = #{projectCode}
+                      	<!-- AND VNCS.CODE = #{areaCode} 预留-->
+                    GROUP BY VNCS.CODE, NSI2.ISQUAL
+                    ORDER BY vncs.code
+        ) t2 ON (t2.code = t.code ) 
+		) t3  
+		UNION ALL 
+        SELECT  ' ' as CLSNO,
+        		T4.CODE,
+                '' AS AREANAME,
+                T4.TOTALSUM,
+                T4.ISQUALSUM,
+                T4.PCTSUM
+              FROM (
+              SELECT decode(vncs.code,NULL,'汇总',vncs.code) AS code,SUM(vncs.totalCount) AS totalSum,NVL(NSI2.ISQUAL, 0) AS ISQUALSUM,
+                    NVL((CASE WHEN NSI2.ISQUAL = 0 THEN 0 WHEN NSI2.ISQUAL != 0 THEN 100 * ROUND((NSI2.ISQUAL / SUM(VNCS.TOTALCOUNT)), 3) END), 0) AS PCTSUM
+                    FROM  V_NKY_CITY_SAMPLE VNCS
+                    LEFT JOIN (SELECT VNCS2.CODE, COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_CITY_SAMPLE VNCS2
+		                WHERE VNCS2.SAMPLE_STATUS = 5 AND VNCS2.IS_QUALIFIED = 0
+						<if test="industryCode != '' and industryCode != null ">
+							AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+					   </if>
+					   <if test="pt != '' and pt != null ">
+							AND VNCS2.DETECTION_CODE = #{pt}
+					   </if>
+                      AND VNCS2.PROJECT_CODE = #{projectCode}
+                    GROUP BY VNCS2.CODE) NSI2 ON (NSI2.CODE = VNCS.CODE)
+                  WHERE 1=1 
+					AND VNCS.SAMPLE_STATUS = 5
+                 	<if test="industryCode != '' and industryCode != null ">
+						AND VNCS.INDUSTRY_CODE = #{industryCode} 
+				   </if>
+				   <if test="pt != '' and pt != null ">
+						AND VNCS.DETECTION_CODE = #{pt}
+				   </if>
+					AND VNCS.PROJECT_CODE = #{projectCode}
+                  	<!-- AND VNCS.CODE = #{areaCode} 预留-->
+            GROUP BY ROLLUP(vncs.CODE),NSI2.ISQUAL
+		) t4     
+		WHERE T4.CODE = '汇总'
+	</select>
+	
+	<select id="getSjzlLstForProvince" resultMap="plantResult" parameterType="java.util.HashMap">
+		SELECT distinct t.typecode,t.typename FROM V_NKY_city_SAMPLE vncs
+      		INNER JOIN t_s_type t ON (t.typecode = vncs.monitoring_link)
+      		INNER JOIN t_s_typegroup tp ON (tp.id = t.typegroupid) 
+		<where>
+			AND VNCS.PROJECT_CODE = #{projectCode}
+			and tp.typegroupcode = 'freshMilkLink'
+		</where>
+		ORDER BY t.typecode
+	</select>
+	
+	<select id="getProvinceFreshMilkMonitorRight" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (   
+	       SELECT t.code,t.areaname,t2.typename,t2.totalSum,t2.isQualSum,t2.pctSum FROM (
+	             SELECT SUBSTR(s_area.code,1,4) AS code,s_area.areaname FROM SYS_AREA_CODE s_area
+	                    WHERE 1=1
+	                        AND s_area.code LIKE '____00' 
+	                        AND s_area.code != '320000'
+	                      	<!-- AND SUBSTR(s_area.code,1,4) = #{areaCode} -->
+	                     GROUP BY s_area.code,s_area.areaname
+	                     ORDER BY  s_area.code 
+	         ) t
+	         INNER JOIN 
+       		(
+               SELECT vncs.code,t.typename,SUM(vncs.totalCount) AS totalSum,NVL(NSI2.ISQUAL, 0) AS ISQUALSUM,
+                    NVL((CASE WHEN NSI2.ISQUAL = 0 THEN 0 WHEN NSI2.ISQUAL != 0 THEN 100 * ROUND((NSI2.ISQUAL / SUM(VNCS.TOTALCOUNT)), 3) END), 0) AS PCTSUM
+                    ,RANK() OVER(ORDER BY (NSI2.ISQUAL / SUM(VNCS.TOTALCOUNT)) DESC) AS CLSNO
+                    FROM  V_NKY_CITY_SAMPLE vncs
+                    LEFT JOIN (SELECT VNCS2.CODE, COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_CITY_SAMPLE VNCS2
+		                WHERE VNCS2.SAMPLE_STATUS = 5 AND VNCS2.IS_QUALIFIED = 0
+		                AND VNCS2.MONITORING_LINK = #{monitoringLink}
+						<if test="industryCode != '' and industryCode != null ">
+							AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+					   </if>
+					   <if test="pt != '' and pt != null ">
+							AND VNCS2.DETECTION_CODE = #{pt}
+					   </if>
+                      AND VNCS2.PROJECT_CODE = #{projectCode}
+                    GROUP BY VNCS2.CODE) NSI2 ON (NSI2.CODE = VNCS.CODE)
+					LEFT JOIN t_s_type t ON (t.typecode = vncs.monitoring_link)
+					LEFT JOIN t_s_typegroup tp ON (tp.id = t.typegroupid)  
+           			WHERE 1=1
+           				AND vncs.sample_status = 5
+           			   <if test="industryCode != '' and industryCode != null ">
+							AND VNCS.INDUSTRY_CODE = #{industryCode} 
+					   </if>
+					   <if test="pt != '' and pt != null ">
+							AND VNCS.DETECTION_CODE = #{pt}
+					   </if>
+	           			AND vncs.monitoring_link = #{monitoringLink}
+	           			AND TP.TYPEGROUPCODE = 'freshMilkLink'
+						AND VNCS.PROJECT_CODE = #{projectCode}
+					<!-- AND VNCS.CODE = #{areaCode} 预留-->
+     			GROUP BY vncs.code,t.typename, NSI2.ISQUAL
+     		) t2 ON (t.code = t2.code)
+    			ORDER BY t.code)
+		    UNION ALL
+		    SELECT t3.code,'' AS areaname,'' AS typename,t3.totalSum,t3.isQualSum,t3.pctSum FROM (
+		        SELECT vncs.code,SUM(vncs.totalCount) AS totalSum,NVL(NSI2.ISQUAL, 0) AS ISQUALSUM,
+                    NVL((CASE WHEN NSI2.ISQUAL = 0 THEN 0 WHEN NSI2.ISQUAL != 0 THEN 100 * ROUND((NSI2.ISQUAL / SUM(VNCS.TOTALCOUNT)), 3) END), 0) AS PCTSUM
+		        FROM  V_NKY_city_SAMPLE vncs
+		        LEFT JOIN (SELECT VNCS2.CODE, COUNT(VNCS2.SAMPLE_CODE) AS ISQUAL FROM V_NKY_CITY_SAMPLE VNCS2
+		                WHERE VNCS2.SAMPLE_STATUS = 5 AND VNCS2.IS_QUALIFIED = 0
+		                AND VNCS2.MONITORING_LINK = #{monitoringLink}
+						<if test="industryCode != '' and industryCode != null ">
+							AND VNCS2.INDUSTRY_CODE = #{industryCode} 
+					   </if>
+					   <if test="pt != '' and pt != null ">
+							AND VNCS2.DETECTION_CODE = #{pt}
+					   </if>
+                      AND VNCS2.PROJECT_CODE = #{projectCode}
+                GROUP BY VNCS2.CODE) NSI2 ON (NSI2.CODE = VNCS.CODE)
+		        LEFT JOIN t_s_type t ON (t.typecode = vncs.monitoring_link)
+		        LEFT JOIN t_s_typegroup tp ON (tp.id = t.typegroupid)  
+		        WHERE 1=1
+		        	AND vncs.sample_status = 5
+	         	   <if test="industryCode != '' and industryCode != null ">
+						AND VNCS.INDUSTRY_CODE = #{industryCode} 
+				   </if>
+				   <if test="pt != '' and pt != null ">
+						AND VNCS.DETECTION_CODE = #{pt}
+				   </if>
+					AND vncs.monitoring_link = #{monitoringLink}
+	                AND TP.TYPEGROUPCODE = 'freshMilkLink'
+					AND VNCS.PROJECT_CODE = #{projectCode}
+		       			<!-- AND VNCS.CODE = #{areaCode} 预留-->
+		    GROUP BY ROLLUP(vncs.code),NSI2.ISQUAL
+			) t3 WHERE t3.code IS NULL
+	</select>
+	<!-- 全省生鲜乳监测结果 end -->
+	<resultMap type="java.util.LinkedHashMap" id="countryAndOverResultA">
+	</resultMap>
+	<!-- 取得药物检出及超标情况报表 -->
+	<select id="getCountryAndOverList" parameterType="java.util.HashMap" statementType="CALLABLE">
+          <![CDATA[
+	          {CALL PKG_PALNT_SITUATION.GET_POLL_DETECTION_INFO(
+	           #{projectCode,mode=IN,jdbcType=VARCHAR}
+	          ,#{selCondtion,mode=IN,jdbcType=VARCHAR}
+	          ,#{pt,mode=IN,jdbcType=VARCHAR}
+	          ,#{result,mode=OUT,jdbcType=CURSOR,resultMap=countryAndOverResultA}
+	          )}
+          ]]> 
+	</select>
+	
+	<resultMap type="java.util.LinkedHashMap" id="pollDetectionCountResult">
+	</resultMap>
+	<!-- 取得各监测项目不合格情况报表 -->
+	<select id="getPollDetectionCountList" parameterType="java.util.HashMap" statementType="CALLABLE">
+	      <![CDATA[
+	          {CALL PKG_PALNT_SITUATION.GET_POLL_DETECTION_COUNT(
+	           #{projectCode,mode=IN,jdbcType=VARCHAR}
+	          ,#{pt,mode=IN,jdbcType=VARCHAR}
+	          ,#{result,mode=OUT,jdbcType=CURSOR,resultMap=pollDetectionCountResult}
+	          )}
+	      ]]> 
+	</select>
+</mapper>

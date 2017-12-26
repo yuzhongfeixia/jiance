@@ -1,0 +1,5 @@
+keystore"http://192.168.100.140:8080/framework3.3.2/webpage/com/hippo/nky/detection/barcodeprint.store","JKS"; 
+grantsignedBy"bcprint" 
+{ 
+permission java.io.FilePermission"<<ALLFILES>>","read"; 
+}; 

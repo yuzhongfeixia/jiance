@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hippo.nky.entity.standard.AgrCategoryEntity">
+	
+	<select id="searchData" resultType="java.util.HashMap" parameterType="com.hippo.nky.entity.standard.AgrCategoryEntity">
+		select '' as id,'' as cname,0 as agrcategorytype,'' as code  from dual where 1=2
+			<if test="cname != '' and cname != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and cname like '%' || #{cname} || '%'  
+			</if>
+			<if test="code != '' and code != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and code like '%' || #{code} || '%'  
+			</if>
+			<if test="describe != '' and describe != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and describe like '%' || #{describe} || '%'
+			</if>
+			<if test="gems != '' and gems != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and gems like '%' || #{gems} || '%'
+			</if> 
+			<if test="latin != '' and latin != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and latin like '%' || #{latin} || '%'
+			</if> 
+			<if test="ename != '' and ename != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and ename like '%' || #{ename} || '%'
+			</if> 
+			<if test="foodex != '' and foodex != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and foodex like '%' || #{foodex} || '%'
+			</if> 
+			<if test="calias != '' and calias != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and calias like '%' || #{calias} || '%'
+			</if> 
+			<if test="ealias != '' and ealias != null ">
+			union select id,cname,agrcategorytype,code from nky_agr_category where versionid = #{versionid} and ealias like '%' || #{ealias} || '%'
+			</if> 
+	</select>
+
+</mapper>

@@ -1,0 +1,122 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<style type="text/css">
+body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;}
+</style>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=1.5&ak=AC23db0f7c97dc8e4f427a4c7d1059de"></script>
+<title>叠加行政区划图</title>
+</head>
+<body>
+<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+
+// 百度地图API功能
+var map = new BMap.Map("allmap",{minZoom:9,maxZoom:12});
+// var map = new BMap.Map("allmap");
+// var  mapStyle ={ 
+//         features: ["road"]
+//     }
+// map.setMapStyle(mapStyle);
+
+// 百度地图API功能
+var marker1 = new BMap.Marker(new BMap.Point(118.778074, 32.057236));  // 创建标注
+
+//创建信息窗口
+var opts = {
+// 		  width : 200,     // 信息窗口宽度
+// 		  height: 100,     // 信息窗口高度
+// 		  title : "海底捞王府井店" , // 信息窗口标题
+		  enableMessage:false//设置允许信息窗发送短息
+// 		  message:"亲耐滴，晚上一起吃个饭吧？戳下面的链接看下地址喔~"
+		}
+		
+var infoWindow1 = new BMap.InfoWindow("xxx:普通标注<p>xxx:123<p>xxx:hhh<p>",opts);
+
+marker1.addEventListener("click", function(){
+					this.openInfoWindow(infoWindow1);
+				});
+map.addOverlay(marker1);// 将标注添加到地图中
+
+
+var s = ["上海","江苏","安徽","浙江","河南","湖北","山东","江西","福建"];//"陕西","河北","天津","广东",,,"湖南","山西","内蒙古","北京","重庆","辽宁","甘肃","四川"];
+var p1 = new BMap.Point(105.729746,34.58848);//天水
+var p2 = new BMap.Point(106.545583,29.569489);//重庆
+var p3 = new BMap.Point(119.550275,26.544433);
+var p4 = new BMap.Point(128.723627,32.708095);
+var p5 = new BMap.Point(116.37904,39.891343);
+var p6 = new BMap.Point(108.302627,40.032917);
+
+var p7 = new BMap.Point(121.603873,38.978286);
+var p8 = new BMap.Point(123.590781,25.859796);
+
+
+var s2 = ["南京市","苏州市","宿迁市","常州市","盐城市","镇江市","泰州市","南通市","无锡市","扬州市","淮安市","连云港市","徐州市"];
+
+
+map.addEventListener("dragend", function(e) {
+	if( map.getBounds().containsPoint(p1) || 
+		map.getBounds().containsPoint(p2) || 
+		map.getBounds().containsPoint(p3) || 
+		map.getBounds().containsPoint(p4) ||
+		map.getBounds().containsPoint(p5) ||
+		map.getBounds().containsPoint(p6) ||
+		map.getBounds().containsPoint(p7) ||
+		map.getBounds().containsPoint(p8) 
+	  )
+	{
+		map.reset();
+	}
+});
+
+function getBoundary(){  
+// 	map.setMapStyle(mapStyle);
+    var bdary = [];
+    var area ;
+    for (var k = 0; k<s.length; k++){
+    	area = s[k];
+	    bdary[k] = new BMap.Boundary();
+	    if(area == "江苏"){
+	    	bdary[k].get(s[k], function(rs){       //获取行政区域
+		        var count = rs.boundaries.length; //行政区域的点有多少个
+		        for(var i = 0; i < count; i++){
+		            ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 1, fillColor: ""}); //建立多边形覆盖物
+			        map.addOverlay(ply);  //添加覆盖物
+		        } 
+		    });
+	    }else{
+	    	bdary[k].get(s[k], function(rs){       //获取行政区域
+		        var count = rs.boundaries.length; //行政区域的点有多少个
+		        for(var i = 0; i < count; i++){
+        		    ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 1, fillColor: "#ffffff"}); //建立多边形覆盖物
+        		    ply.setFillOpacity(1);
+		            map.addOverlay(ply);  //添加覆盖物
+		        }         
+		    });
+	    }
+  	}
+    for (var k = 0; k<s2.length; k++){
+    	area = s2[k];
+	    bdary[k] = new BMap.Boundary();
+	    	bdary[k].get(s2[k], function(rs){       //获取行政区域
+		        var count = rs.boundaries.length; //行政区域的点有多少个
+		        for(var i = 0; i < count; i++){
+		            ply= new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, fillColor: ""}); //建立多边形覆盖物
+		            ply.setFillOpacity(1);
+			        map.addOverlay(ply);  //添加覆盖物
+		        } 
+		    });
+ 	}
+//     map.setViewport(ply.getPath());    //调整视野
+    map.centerAndZoom(new BMap.Point(118.778074, 32.057236),8);
+    map.panTo(new BMap.Point(118.778074, 32.057236)); 
+    map.enableScrollWheelZoom();
+}
+
+setTimeout(function(){
+    getBoundary();
+}, 1500);
+</script>

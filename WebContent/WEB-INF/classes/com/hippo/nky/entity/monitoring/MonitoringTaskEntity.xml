@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hippo.nky.entity.monitoring.MonitoringTaskEntity">
+	<select id="getMonitoringTaskList" resultType="com.hippo.nky.entity.monitoring.MonitoringTaskEntity" parameterType="java.util.HashMap">
+	  	SELECT 
+	  	   NMT.ID AS id,
+	  	   NMT.PROJECT_CODE AS projectCode,
+	  	   NMT.TASK_CODE as taskcode,
+	  	   NMT.TASKNAME AS taskname,
+	  	   NMT.ORG_CODE AS orgCode,
+		   NMT.AREACODE AS areacode,
+		   NMT.MONITORING_LINK AS monitoringLink,
+		   NMT.SAMPLING_COUNT AS samplingCount,
+		   NMT.AGR_CODE AS agrCode,
+		   NMPL.TYPE AS monitorType,
+		   FAREA.AREANAME || AREA.AREANAME AS sampleArea
+		from NKY_MONITORING_TASK NMT
+		LEFT JOIN NKY_MONITORING_PROJECT NMP ON (NMT.PROJECT_CODE = NMP.PROJECT_CODE)
+		LEFT JOIN NKY_MONITORING_PLAN NMPL ON (NMP.PLAN_CODE = NMPL.PLAN_CODE)
+		LEFT JOIN SYS_AREA_CODE AREA ON (NMT.AREACODE = AREA.CODE)
+        LEFT JOIN SYS_AREA_CODE FAREA ON (SUBSTR(AREA.CODE, 1, 4) || '00' = FAREA.CODE AND SUBSTR(AREA.CODE, 5, 2) != '00')
+<!-- 		INNER JOIN NKY_MONITORING_TASK_DETAILS NMTD ON (NMT.TASK_CODE = NMTD.TASK_CODE) -->
+		WHERE NMT.PROJECT_CODE = #{projectCode} 
+<!-- 		AND NMTD.PAD_ID = #{padId} -->
+		AND exists 
+    	(
+	        select *
+	         from NKY_MONITORING_TASK_DETAILS NMTD
+	         where NMTD.TASK_CODE = NMT.TASK_CODE
+	         AND NMTD.PAD_ID = #{padId}     
+   		 )
+		<if test="taskName != '' and taskName != null">
+		 	AND NMT.TASKNAME like '%' || #{taskName} || '%'
+		</if>
+	</select>
+	
+	<!-- 取得抽样人已完成的抽样信息 -->
+	<select id="getPadCompleteSampleCodeList" resultType="java.lang.String" parameterType="java.util.HashMap">
+		SELECT
+			NSI.SAMPLE_CODE AS sampleCode		
+		 FROM NKY_SAMPLING_INFO NSI
+		 WHERE
+		     NSI.TASK_CODE = #{taskCode}
+		 AND NSI.PAD_ID = #{padId}
+		 AND NSI.SAMPLE_STATUS = '1'
+	</select>
+</mapper>

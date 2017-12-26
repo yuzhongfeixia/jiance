@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hippo.nky.entity.monitoring.MonitoringTaskDetailsEntity">
+	<select id="getMonitoringTaskInfoByTaskCode" resultType="com.hippo.nky.entity.monitoring.MonitoringTaskDetailsEntity" parameterType="java.util.HashMap">
+	  	SELECT 
+	  	    NMTD.ID,
+	  	    NMTD.PAD_ID AS padId,
+	  	    NMTD.TASK_COUNT AS taskCount,
+	  	    NMTD.ASSIGN_TIME AS assignTime,
+	  	    NMTD.TASK_CODE AS taskCode,
+	  	    NMTD.TASK_STATUS AS taskStatus,
+	  	    TSD.DEPARTNAME AS releaseunit,
+	  	    NMP.ENDTIME AS endtime
+	  	FROM NKY_MONITORING_TASK_DETAILS NMTD 
+	  	LEFT JOIN NKY_MONITORING_TASK NMT ON (NMT.TASK_CODE = NMTD.TASK_CODE)
+	  	LEFT JOIN NKY_MONITORING_PROJECT NMP ON (NMP.PROJECT_CODE = NMT.PROJECT_CODE)
+	  	LEFT JOIN Nky_MONITORING_PLAN NMPL ON (NMPL.PLAN_CODE = NMP.PLAN_CODE)
+	  	LEFT JOIN T_S_DEPART TSD ON(TSD.ID = NMPL.RELEASEUNIT)
+	  	WHERE NMTD.TASK_CODE = #{taskCode} 
+	  	AND NMTD.PAD_ID = #{padId}
+	</select>
+	
+	<!--  抽样品种取得   -->
+	<select id="getMonitoringBreedForTask" resultType="com.hippo.nky.entity.monitoring.MonitoringBreedEntity" parameterType="java.util.HashMap">
+	  	SELECT 
+	  	    AGR.CNAME AS agrName,
+	  	    AGR.PID as pId,
+	  	    NMB.ID AS id,
+	  	    NMB.AGR_CODE AS agrCode,
+	  	    NMB.PROJECT_CODE AS projectCode	  		
+	  	FROM NKY_MONITORING_BREED NMB
+	  	LEFT JOIN NKY_MONITORING_TASK NMT ON(NMB.PROJECT_CODE = NMT.PROJECT_CODE)
+	  	LEFT JOIN V_NKY_MONITORING_AGR AGR ON(NMB.AGR_CODE = AGR.CODE AND NMB.PROJECT_CODE = AGR.PROJECT_CODE)
+	  	WHERE NMT.TASK_CODE = #{taskCode} 
+	</select>
+	
+	<!--  抽样品种取得   -->
+	<select id="getMonitoringBreedForSelect" resultType="com.hippo.nky.entity.monitoring.MonitoringBreedEntity" parameterType="java.util.HashMap">
+	  	SELECT 
+	  		AGR.CODE AS agrCode,
+	  	    AGR.CNAME AS agrName,
+	  	    AGR.ID AS id,
+	  	    AGR.PID AS pId
+	  	FROM V_NKY_MONITORING_AGR AGR
+	  	WHERE AGR.PROJECT_CODE = #{projectCode}
+	</select>
+	
+	<!--  抽样地区取得-->
+    <select id="getMonitoringAreaForTask" resultType="java.lang.String" parameterType="java.util.HashMap">
+      SELECT   
+        FAREA.AREANAME || AREA.AREANAME AS areaName     
+      FROM NKY_MONITORING_TASK NMT
+      LEFT JOIN SYS_AREA_CODE AREA ON (NMT.AREACODE = AREA.CODE)
+      LEFT JOIN SYS_AREA_CODE FAREA ON (SUBSTR(AREA.CODE, 1, 4) || '00' = FAREA.CODE AND SUBSTR(AREA.CODE, 5, 2) != '00')
+      WHERE NMT.TASK_CODE = #{taskCode}
+	</select>
+	
+	<!--  抽样环节取得-->
+	<select id="getMonitoringLinkForTask" resultType="java.lang.String" parameterType="java.util.HashMap">
+	  	SELECT 
+	  	 	TST.TYPENAME AS monitoringLinkName
+	  	FROM NKY_MONITORING_SAMPLELINK NMS
+	  	LEFT JOIN NKY_MONITORING_TASK NMT ON(NMS.PROJECT_CODE = NMT.PROJECT_CODE)
+	  	LEFT JOIN T_S_TYPE TST ON (TST.TYPECODE =  NMS.MONITORING_LINK)
+		LEFT JOIN T_S_TYPEGROUP TSTG ON (TSTG.ID = TST.TYPEGROUPID)  
+	  	WHERE NMT.TASK_CODE = #{taskCode} 
+	  	AND TSTG.TYPEGROUPCODE = 'allmonLink'
+	</select>
+	
+	<!-- 任务转发信息更新   当前pad任务更新 -->
+	<update id="updateCurrentUserTask" parameterType="java.util.HashMap">
+		UPDATE 
+		  NKY_MONITORING_TASK_DETAILS
+		  SET TASK_COUNT = TASK_COUNT - #{total}
+		WHERE
+		  TASK_CODE = #{taskCode}
+		  AND PAD_ID = #{userPadId}
+		  AND TASK_STATUS = '0'
+	</update>
+	
+	<!-- 任务转发信息更新  被转发的pad任务更新 -->
+	<update id="updateDesignationUserTask" parameterType="java.util.HashMap">
+		UPDATE 
+		  NKY_MONITORING_TASK_DETAILS
+		  SET TASK_COUNT = TASK_COUNT + #{total}
+		WHERE
+ 	  	  TASK_CODE = #{taskCode}
+	  	  AND PAD_ID = #{padId}
+	  	  AND TASK_STATUS = '0'
+	</update>
+	
+	<!-- 取得pad抽样员列表 -->
+	<select id="getAllPadList" resultType="com.hippo.nky.entity.monitoring.NkyMonitoringPadEntity" parameterType="java.util.HashMap">
+    SELECT
+        NMP.ID AS id,
+        NMP.USERNAME AS username,
+        NMP.PASSWORD AS password,
+        NMP.ORG_CODE AS orgCode,
+        NMP.REMARK AS remark
+    FROM
+        NKY_MONITORING_PAD NMP
+    INNER JOIN NKY_ORGANIZATION_INFO NOI ON (NOI.CODE = NMP.ORG_CODE)
+    WHERE NMP.ID != #{padId}
+    AND NMP.ORG_CODE = (
+    	SELECT ORG_CODE 
+    	FROM NKY_MONITORING_PAD
+    	WHERE ID= #{padId}
+    )
+	</select>
+	
+	<select id="getAllPadList1" resultType="com.hippo.nky.entity.monitoring.NkyMonitoringPadEntity" parameterType="java.util.HashMap">
+    SELECT
+        NMP.ID AS id,
+        NMP.USERNAME AS username,
+        NMP.PASSWORD AS password,
+        NMP.ORG_CODE AS orgCode,
+        NMP.REMARK AS remark,
+        NMTD.TASK_COUNT AS taskCount
+    FROM
+         NKY_MONITORING_PAD NMP
+    LEFT JOIN NKY_MONITORING_TASK_DETAILS NMTD ON (NMTD.PAD_ID = NMP.ID)
+    WHERE NMP.ID != #{padId}
+    AND NMTD.TASK_CODE = #{taskCode}
+	</select>
+</mapper>
