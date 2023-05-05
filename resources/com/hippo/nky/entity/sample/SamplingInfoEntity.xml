@@ -290,6 +290,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
       ) t8 ON (t8.PROJECT_CODE = T1.PROJECT_CODE)
      WHERE t4.CODE = #{orgCode}
      AND T1.STATE = '1'
+     AND to_char(T1.starttime,'yyyy')>= extract(year from sysdate) - 1
      AND T6.PAD_ID = #{padId}
      <if test="projectName != '' and projectName != null">
 		AND t1.NAME LIKE '%' || #{projectName} || '%' 

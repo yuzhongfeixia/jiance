@@ -104,9 +104,7 @@ public class SamplingInfoServiceImpl extends CommonServiceImpl implements Sampli
 			selConditionMap.put("samplingOrgCode", pageObj.getSamplingOrgCode());
 		} else {
 			OrganizationEntity org = this.getEntity(OrganizationEntity.class, ResourceUtil.getSessionUserName().getTSDepart().getId());
-			if(org!=null){
-				selConditionMap.put("samplingOrgCode", org.getCode());
-			}
+			selConditionMap.put("samplingOrgCode", org.getCode());
 		}
 
 		if (StringUtil.isNotEmpty(pageObj.getSampleName())) {
