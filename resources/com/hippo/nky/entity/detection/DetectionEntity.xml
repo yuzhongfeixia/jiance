@@ -1900,4 +1900,66 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		   AND NSI.D_CODE = #{dCode}
 		 </if>
 	</select>
+	
+	<resultMap type="java.util.HashMap" id="monitoringDectionListMap">
+		<result column="SAMPLE_CODE" property="sampleCode" />
+		<result column="CNAME" property="cname" />
+		<result column="TYPENAME" property="typeName" />
+		<result column="CITYNAME" property="cityName" />
+		<result column="COUNTYNAME" property="countyName" />
+		<result column="UNIT_ADDRESS" property="unitAddress" />
+		<result column="UNIT_FULLNAME" property="unitFullName" />
+		<result column="DETERESULT" property="deteResult" />
+	</resultMap>
+	
+	<select id="selectMonitoringDectionList" parameterType="java.util.HashMap" resultMap="monitoringDectionListMap">
+		SELECT NSI.SAMPLE_CODE,
+       		   NVL(AGR.CALIAS, AGR.CNAME) AS CNAME,
+       		   LINKTYPE.TYPENAME,
+       		   CITY.AREANAME   AS CITYNAME,
+       		   COUNTY.AREANAME AS COUNTYNAME,
+       		   NSI.UNIT_ADDRESS,
+       		   NSI.UNIT_FULLNAME,
+       		   WM_CONCAT(DETEINFO.CAS_CODE || '#EM#' || DETEINFO.DETECTION_VALUE || '#EM#' || DETEINFO.IS_OVERPROOF) AS DETERESULT
+  		FROM NKY_SAMPLING_INFO NSI,
+       		 NKY_DETECTION_INFORMATION DETEINFO,
+       		 NKY_MONITORING_PROJECT MONPROJECT,
+       		 NKY_MONITORING_TASK NMP,
+       		 (SELECT TY.TYPECODE, TY.TYPENAME
+          		 FROM T_S_TYPEGROUP TG, T_S_TYPE TY
+         		 WHERE TG.TYPEGROUPCODE = 'allmonLink'
+           		 AND TG.ID = TY.TYPEGROUPID) LINKTYPE,
+       		 SYS_AREA_CODE CITY,
+       		 SYS_AREA_CODE COUNTY,
+       		 NKY_AGR_CATEGORY AGR,
+       		 NKY_STANDARD_VERSION JUDGEVERSION
+		WHERE 
+			<!-- 检测信息已上报 -->
+		  NSI.SAMPLE_STATUS = '5'
+		  	<if test="projectCode != '' and projectCode != null ">
+				AND MONPROJECT.PROJECT_CODE = #{projectCode}
+          	</if>
+			<if test="qt != '' and qt != null ">
+				AND NMP.LEADUNIT = #{qt}
+          	</if>
+          	<if test="pt != '' and pt != null ">
+          		AND NSI.SAMPLING_ORG_CODE = #{pt}
+          	</if>
+		  AND NSI.SAMPLE_CODE = DETEINFO.SAMPLE_CODE
+		  AND NSI.TASK_CODE = NMP.TASK_CODE
+		  AND MONPROJECT.PROJECT_CODE = NMP.PROJECT_CODE
+		  AND LINKTYPE.TYPECODE = NSI.MONITORING_LINK
+		  AND CITY.CODE = NSI.CITY_CODE
+		  AND COUNTY.CODE = NSI.COUNTY_CODE
+		  AND AGR.CODE = NSI.AGR_CODE
+		  AND AGR.VERSIONID = JUDGEVERSION.AGR_VERSION_ID
+		  AND JUDGEVERSION.ID = MONPROJECT.JUDGE_VERSION_ID
+	 GROUP BY NSI.SAMPLE_CODE,
+		      NVL(AGR.CALIAS, AGR.CNAME),
+		      LINKTYPE.TYPENAME,
+		      CITY.AREANAME,
+		      COUNTY.AREANAME,
+		      NSI.UNIT_ADDRESS,
+		      NSI.UNIT_FULLNAME
+	</select>
 </mapper>

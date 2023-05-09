@@ -113,6 +113,15 @@ function toDetail(data){
      App.unblockUI(pageContent);
    });
 }
+
+function exportReport() {
+	getTabInfo();
+	if ($("#projectCode").val() == "") {
+		modalAlert("请选择一个项目!");
+		return;
+	}
+	exportExcelByCustom('detection.DetectionService.exprotCompleteReport','','searchConditionForm');
+}
 </script>
 </head>	
 <body class="page-header-fixed">
@@ -210,6 +219,7 @@ function toDetail(data){
 					<div class="clearfix" >
 						<div class="pull-right">
 							<a id="searchBtn" class="btn btngroup_seach"><i class="icon-search"></i>搜索</a>
+							<a class="btn btngroup_usual" onclick="exportReport()">导出Excel<i class="icon-share"></i></a>
 						</div>
 					</div>
 					<table class="table table-striped table-bordered table-hover" id="sample_inquire_tb">

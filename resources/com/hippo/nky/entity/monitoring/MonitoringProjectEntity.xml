@@ -295,6 +295,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		 GROUP BY DECTION.AGR_CODE, DECTION.PROJECT_CODE, AGR_DIC.CNAME
     </select>
 	
+    <select id="selectMonitoringDectionPollList" parameterType="java.lang.String" resultType="java.util.HashMap">
+		SELECT DISTINCT DECTION.POLL_CAS as pollCas, POLL_DIC.POPCNAME as pollName
+		FROM NKY_MONITORING_DECTION_TEMPLET DECTION,
+			 NKY_POLL_DICTIONARY POLL_DIC,
+			 V_NKY_MONITORING_AGR AGR_DIC
+		WHERE DECTION.POLL_CAS = POLL_DIC.CAS
+		  AND AGR_DIC.PROJECT_CODE = DECTION.PROJECT_CODE
+		  AND DECTION.AGR_CODE = AGR_DIC.CODE
+		  AND DECTION.PROJECT_CODE = #{project_code}
+	</select>
+	
 	<resultMap type="java.util.HashMap" id="monitoringOrganizationListResultMap">
 		<result column="ID" property="id" />
 		<result column="PROJECT_CODE" property="projectCode" />

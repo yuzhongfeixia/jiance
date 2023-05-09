@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ import com.hippo.nky.service.sample.SamplingInfoServiceI;
 public class DetectionServiceImpl extends CommonServiceImpl implements
 		DetectionServiceI {
 	public static final String NAME_SPACE = "com.hippo.nky.entity.detection.DetectionEntity.";
+	private static final String MONITORINGPROJECTENTITY_NAME_SPACE = "com.hippo.nky.entity.monitoring.MonitoringProjectEntity.";
 	@Autowired  
 	SamplingInfoServiceI samplingInfoService;
 	@Override
@@ -997,6 +999,113 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
       return reportList;
     }
 
+	/**
+	 * 检测数据下载
+	 * 
+	 * @param paramMap
+	 * @return
+	 */
+	public List<Map<String, Object>> exprotCompleteReport(Map<String, Object> paramMap) {
+		String projectCode = ConverterUtil.toString(paramMap.get("projectCode"));
+		if (ConverterUtil.isEmpty(projectCode)) {
+			return new ArrayList<Map<String, Object>>();
+		}
+		System.out.println(paramMap);
+		List<Map<String, Object>> monitoringDectionTempletEntityList = this
+				.findListByMyBatis(MONITORINGPROJECTENTITY_NAME_SPACE + "selectMonitoringDectionPollList", projectCode);
+		Map pollMap = getAgrPollMap(monitoringDectionTempletEntityList);
+
+		String[] COMPLETE_FIX_PREFIX = { "序号", "任务名称", "样品编号", "样品名称", "抽样环节", "抽样省", "抽样市", "抽样县", "抽样地址", "企业名称",
+				"溯源省", "溯源市", "溯源县", "溯源产地", "判定结果" };
+		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+
+		// excel头
+		result.add(getCompleteReportHeader(COMPLETE_FIX_PREFIX, pollMap));
+
+		// excel的body部分
+		List<Map<String, Object>> bodyList = this.findListByMyBatis(NAME_SPACE + "selectMonitoringDectionList",
+				paramMap);
+		for (int i = 0; i < bodyList.size(); i++) {
+			result.add(getCompleteReportRow(i + 1, bodyList.get(i), pollMap));
+		}
+		return result;
+	}
+
+	private Map<String, Object> getCompleteReportRow(int i, Map<String, Object> detail, Map pollMap) {
+		Map<String, Object> rowMap = new LinkedHashMap<String, Object>();
+		rowMap.put("TITLE_1", i); // 序号
+		rowMap.put("TITLE_2", ""); // 任务名称
+		rowMap.put("TITLE_3", detail.get("sampleCode")); // 样品编号
+		rowMap.put("TITLE_4", detail.get("cname")); // 样品名称
+		rowMap.put("TITLE_5", detail.get("typeName")); // 抽样环节
+		rowMap.put("TITLE_6", "江苏省"); // 抽样省
+		rowMap.put("TITLE_7", detail.get("cityName")); // 抽样市
+		rowMap.put("TITLE_8", detail.get("countyName")); // 抽样县
+		rowMap.put("TITLE_9", detail.get("unitAddress")); // 抽样地址
+		rowMap.put("TITLE_10", detail.get("unitFullName")); // 企业名称
+		rowMap.put("TITLE_11", ""); // 溯源省
+		rowMap.put("TITLE_12", ""); // 溯源市
+		rowMap.put("TITLE_13", ""); // 溯源县
+		rowMap.put("TITLE_14", ""); // 溯源产地
+		Map results = getResultMap((String) detail.get("deteResult"));
+		rowMap.put("TITLE_15", results.get("TITLE_15")); // 判定结果
+		Iterator pollKeyIt = pollMap.keySet().iterator();
+		int num = 16;
+		while (pollKeyIt.hasNext()) {
+			rowMap.put("TITLE_" + num, results.get(pollKeyIt.next()));
+			num++;
+		}
+		return rowMap;
+	}
+
+	private Map<String, Object> getResultMap(String deteResult) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		String[] results = deteResult.split(",");
+		String title15 = "合格";
+		for (String res : results) {
+			String[] temp = res.split(ConverterUtil.SEPARATOR_ELEMENT);
+			if ("1".equals(temp[2])) { // 不合格
+				result.put(temp[0], temp[1] + "_" + "不合格");
+				title15 = "不合格";
+			} else if (Float.valueOf(temp[1]) > 0) {
+				result.put(temp[0], Float.valueOf(temp[1]));
+			} else {
+				result.put(temp[0], "未检出");
+			}
+		}
+		result.put("TITLE_15", title15);
+		return result;
+	}
+
+	private Map<String, Object> getCompleteReportHeader(String[] prefix, Map pollMap) {
+		Map<String, Object> headerMap = new LinkedHashMap<String, Object>();
+		int headerCount = 0;
+		for (; headerCount < prefix.length; headerCount++) {
+			headerMap.put("TITLE_" + (headerCount + 1),
+					ConverterUtil.EXCEL_TITLE + ConverterUtil.SEPARATOR_KEY_VALUE + prefix[headerCount]
+							+ ConverterUtil.SEPARATOR_ELEMENT + ConverterUtil.EXCEL_WIDTH
+							+ ConverterUtil.SEPARATOR_KEY_VALUE + ConverterUtil.EXCEL_WIDTH_AUTO);
+		}
+		Iterator pollKeyIt = pollMap.keySet().iterator();
+		while (pollKeyIt.hasNext()) {
+			headerMap.put("TITLE_" + (headerCount + 1),
+					ConverterUtil.EXCEL_TITLE + ConverterUtil.SEPARATOR_KEY_VALUE + pollMap.get(pollKeyIt.next())
+							+ ConverterUtil.SEPARATOR_ELEMENT + ConverterUtil.EXCEL_WIDTH
+							+ ConverterUtil.SEPARATOR_KEY_VALUE + ConverterUtil.EXCEL_WIDTH_AUTO);
+			headerCount++;
+		}
+		return headerMap;
+	}
+
+	private Map<String, Object> getAgrPollMap(List<Map<String, Object>> list) {
+		Map<String, Object> result = new LinkedHashMap<String, Object>();
+		for (Map map : list) {
+			result.put((String) map.get("POLLCAS"), map.get("POLLNAME"));
+		}
+		return result;
+	}
+    
+    
 	/**
 	 * 实验室编码管理列表导出
 	 * @param paramMap
