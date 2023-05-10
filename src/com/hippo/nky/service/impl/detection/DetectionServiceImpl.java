@@ -1010,7 +1010,6 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 		if (ConverterUtil.isEmpty(projectCode)) {
 			return new ArrayList<Map<String, Object>>();
 		}
-		System.out.println(paramMap);
 		List<Map<String, Object>> monitoringDectionTempletEntityList = this
 				.findListByMyBatis(MONITORINGPROJECTENTITY_NAME_SPACE + "selectMonitoringDectionPollList", projectCode);
 		Map pollMap = getAgrPollMap(monitoringDectionTempletEntityList);

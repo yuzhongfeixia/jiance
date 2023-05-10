@@ -22,7 +22,12 @@ table.detailTable td.detailTd{
 				</div>
 			</div>
 			<div class="portlet-body">
-				<span style="float:right">单位: mg/kg(mg/l)</span>
+				<span>单位: <span
+					style="color: red; font-weight: bold; font-size: large;">种植业：mg
+						/ l</span> <span
+					style="color: red; font-weight: bold; font-size: large; margin-left: 20px">畜禽：μg
+						/ kg</span>
+				</span>
 				<table class="table table-bordered table-hover detailViewTable">
 					<c:if test="${isSample}">
 						<tr>

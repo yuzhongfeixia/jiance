@@ -198,7 +198,12 @@ function setTempValsToSubmit(data){
 					<form id="frm_set_result_poll" action="#" class="form-horizontal" validate="true">
 						<input type="hidden" value="${labCode}"/>
 						<div class="scrollDiv">
-							<span style="float:right">单位: mg/kg(mg/l)</span>
+							<span>单位: <span
+								style="color: red; font-weight: bold; font-size: large;">种植业：mg
+									/ l</span> <span
+								style="color: red; font-weight: bold; font-size: large; margin-left: 20px">畜禽：μg
+									/ kg</span>
+							</span>
 							<table id="table_set_result_poll" class="table table-striped table-bordered table-hover detInfo_table">
 								<thead>
 									<tr>
@@ -377,8 +382,13 @@ function unDetectionComplete(){
 				</div>
 				<form id="frm_set_result_sample" action="#" class="form-horizontal" validate="true">
 					<div class="scrollDiv">
-						<span style="float:right">单位: mg/kg(mg/l)</span>
-						<table id="table_set_result_sample" class="table table-striped table-bordered table-hover " style="margin-top: 5px;">
+							<span>单位: <span
+								style="color: red; font-weight: bold; font-size: large;">种植业：mg
+									/ l</span> <span
+								style="color: red; font-weight: bold; font-size: large; margin-left: 20px">畜禽：μg
+									/ kg</span>
+							</span>
+							<table id="table_set_result_sample" class="table table-striped table-bordered table-hover " style="margin-top: 5px;">
 							<thead>
 								<tr>
 									<th>实验室编码</th>
