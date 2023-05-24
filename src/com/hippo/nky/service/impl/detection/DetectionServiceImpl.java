@@ -1020,13 +1020,22 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 
 		// excel头
 		result.add(getCompleteReportHeader(COMPLETE_FIX_PREFIX, pollMap));
-
+		
 		// excel的body部分
-		List<Map<String, Object>> bodyList = this.findListByMyBatis(NAME_SPACE + "selectMonitoringDectionList",
-				paramMap);
-		for (int i = 0; i < bodyList.size(); i++) {
-			result.add(getCompleteReportRow(i + 1, bodyList.get(i), pollMap));
+		Integer iCount = (Integer) this.getObjectByMyBatis(NAME_SPACE + "selectMonitoringDectionListCount", paramMap);
+		int singleCount = 1000;
+		int cycleNum = iCount % singleCount == 0 ? iCount / singleCount : iCount / singleCount + 1;
+		for (int i = 0; i < cycleNum; i++) {
+			paramMap.put("beginIndex", i * singleCount);
+			paramMap.put("endIndex", (i + 1) * singleCount);
+			// excel的body部分
+			List<Map<String, Object>> bodyList = this.findListByMyBatis(NAME_SPACE + "selectMonitoringDectionListWithCount",
+					paramMap);
+			for (int j = 0; j < bodyList.size(); j++) {
+				result.add(getCompleteReportRow(i * singleCount + j + 1, bodyList.get(j), pollMap));
+			}
 		}
+		
 		return result;
 	}
 
@@ -1042,10 +1051,10 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 		rowMap.put("TITLE_8", detail.get("countyName")); // 抽样县
 		rowMap.put("TITLE_9", detail.get("unitAddress")); // 抽样地址
 		rowMap.put("TITLE_10", detail.get("unitFullName")); // 企业名称
-		rowMap.put("TITLE_11", ""); // 溯源省
-		rowMap.put("TITLE_12", ""); // 溯源市
-		rowMap.put("TITLE_13", ""); // 溯源县
-		rowMap.put("TITLE_14", ""); // 溯源产地
+		rowMap.put("TITLE_11", "江苏省"); // 溯源省
+		rowMap.put("TITLE_12", detail.get("cityName")); // 溯源市
+		rowMap.put("TITLE_13", detail.get("countyName")); // 溯源县
+		rowMap.put("TITLE_14", detail.get("unitAddress")); // 溯源产地
 		Map results = getResultMap((String) detail.get("deteResult"));
 		rowMap.put("TITLE_15", results.get("TITLE_15")); // 判定结果
 		Iterator pollKeyIt = pollMap.keySet().iterator();
