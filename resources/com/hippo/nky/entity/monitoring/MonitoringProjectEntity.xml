@@ -296,7 +296,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 	
     <select id="selectMonitoringDectionPollList" parameterType="java.lang.String" resultType="java.util.HashMap">
-		SELECT DISTINCT DECTION.POLL_CAS as pollCas, POLL_DIC.POPCNAME as pollName
+		SELECT DISTINCT DECTION.POLL_CAS as POLLCAS, NVL(POLL_DIC.CNAME, POLL_DIC.POPCNAME) as POLLNAME
 		FROM NKY_MONITORING_DECTION_TEMPLET DECTION,
 			 NKY_POLL_DICTIONARY POLL_DIC,
 			 V_NKY_MONITORING_AGR AGR_DIC
