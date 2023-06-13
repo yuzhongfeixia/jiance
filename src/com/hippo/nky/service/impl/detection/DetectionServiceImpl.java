@@ -1075,8 +1075,8 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 			if ("1".equals(temp[2])) { // 不合格
 				result.put(temp[0], temp[1] + "_" + "不合格");
 				title15 = "不合格";
-			} else if (Float.valueOf(temp[1]) > 0) {
-				result.put(temp[0], Float.valueOf(temp[1]));
+			} else if (Double.valueOf(temp[1]) > 0) {
+				result.put(temp[0], Double.valueOf(temp[1]));
 			} else {
 				result.put(temp[0], "未检出");
 			}

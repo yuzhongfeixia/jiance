@@ -625,7 +625,7 @@ public final class ExcelUtils {
 				}
 			} else {
 				// 取得单元格的值
-				cellVal = bodyValue;
+				cellVal = rowMap.get(bodyString);
 			}
 			// 设置单元格的值
 			setCellVal(cell, cellVal);
