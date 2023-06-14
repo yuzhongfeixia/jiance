@@ -1060,7 +1060,8 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 		Iterator pollKeyIt = pollMap.keySet().iterator();
 		int num = 16;
 		while (pollKeyIt.hasNext()) {
-			rowMap.put("TITLE_" + num, results.get(pollKeyIt.next()));
+			Object result = results.get(pollKeyIt.next());
+			rowMap.put("TITLE_" + num, result == null ? "未检出" : result);
 			num++;
 		}
 		return rowMap;
@@ -1077,8 +1078,8 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 				title15 = "不合格";
 			} else if (Double.valueOf(temp[1]) > 0) {
 				result.put(temp[0], Double.valueOf(temp[1]));
-			} else {
-				result.put(temp[0], "未检出");
+			} else if (Double.valueOf(temp[1]) < 0) {
+				result.put(temp[0], "未检");
 			}
 		}
 		result.put("TITLE_15", title15);
