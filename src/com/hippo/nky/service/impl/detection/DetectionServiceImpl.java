@@ -1074,7 +1074,7 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 		for (String res : results) {
 			String[] temp = res.split(ConverterUtil.SEPARATOR_ELEMENT);
 			if ("1".equals(temp[2])) { // 不合格
-				result.put(temp[0], temp[1] + "_" + "不合格");
+				result.put(temp[0], Double.valueOf(temp[1]) + "_" + "不合格");
 				title15 = "不合格";
 			} else if (Double.valueOf(temp[1]) > 0) {
 				result.put(temp[0], Double.valueOf(temp[1]));
