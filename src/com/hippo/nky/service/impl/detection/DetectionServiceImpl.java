@@ -1,6 +1,7 @@
 package com.hippo.nky.service.impl.detection;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -1077,7 +1078,13 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 				result.put(temp[0], Double.valueOf(temp[1]) + "_" + "不合格");
 				title15 = "不合格";
 			} else if (Double.valueOf(temp[1]) > 0) {
-				result.put(temp[0], Double.valueOf(temp[1]));
+				String obj = temp[1].toString();
+				if (obj.indexOf(".") > -1 && obj.length() - obj.indexOf(".") - 1 == 6) {
+					// 有6位小数的数值
+					result.put(temp[0], new DecimalFormat("0.000000").format(Double.parseDouble(obj)));
+				} else {
+					result.put(temp[0], Double.parseDouble(obj)+"");
+				}
 			} else if (Double.valueOf(temp[1]) < 0) {
 				result.put(temp[0], "未检");
 			}
