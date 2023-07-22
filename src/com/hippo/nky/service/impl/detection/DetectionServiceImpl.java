@@ -704,6 +704,80 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 		return (List<Map<String, Object>>) paramsMap.get("result");
 	}
 	
+	@Override
+	@Transactional(propagation=Propagation.SUPPORTS)
+	public List<Map<String, Object>> getReportListNew(DetectionEntity detectionEntity) {
+		Map<String, Object> paramsMap = new HashMap<String, Object>();
+		paramsMap.put("projectCode", detectionEntity.getProjectCode());
+		paramsMap.put("orgCode", detectionEntity.getOrgCode());
+		paramsMap.put("selCondtion", detectionEntity.getSelCondtion());
+		List<Map<String, Object>> monitoringDectionTempletEntityList = this.findListByMyBatis(
+				MONITORINGPROJECTENTITY_NAME_SPACE + "selectMonitoringDectionPollList",
+				detectionEntity.getProjectCode());
+		Map pollMap = getAgrPollMap(monitoringDectionTempletEntityList);
+		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+		result.add(getReportListHeader(pollMap));
+
+		List<Map<String, Object>> bodyList = this.findListByMyBatis(NAME_SPACE + "getReportListNew", paramsMap);
+
+		for (int j = 0; j < bodyList.size(); j++) {
+			result.add(getReportListRow(bodyList.get(j), pollMap));
+		}
+		return result;
+	}
+
+	private Map<String, Object> getReportListRow(Map<String, Object> detail, Map pollMap) {
+		Map<String, Object> rowMap = new LinkedHashMap<String, Object>();
+		rowMap.put("LAB_CODE", detail.get("labCode"));
+		rowMap.put("CNAME", detail.get("cname"));
+		Map results = getReportResultMap((String) detail.get("deteResult"));
+		int headerCount = 0;
+		Iterator pollKeyIt = pollMap.keySet().iterator();
+		while (pollKeyIt.hasNext()) {
+			Object result = results.get(pollKeyIt.next());
+			rowMap.put("CLM_" + (headerCount + 1), result == null ? "-" : result);
+			headerCount++;
+		}
+		return rowMap;
+	}
+
+	private Map<String, Object> getReportResultMap(String deteResult) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		String[] results = deteResult.split(",");
+		for (String res : results) {
+			String[] temp = res.split(ConverterUtil.SEPARATOR_ELEMENT);
+			if ("1".equals(temp[2])) { // 不合格
+				result.put(temp[0], "<FONT STYLE=\"COLOR:RED;\">" + Double.valueOf(temp[1]) + "</FONT>");
+			} else if (Double.valueOf(temp[1]) > 0) {
+				String obj = temp[1].toString();
+				if (obj.indexOf(".") > -1 && obj.length() - obj.indexOf(".") - 1 == 6) {
+					// 有6位小数的数值
+					result.put(temp[0], new DecimalFormat("0.000000").format(Double.parseDouble(obj)));
+				} else {
+					result.put(temp[0], Double.parseDouble(obj) + "");
+				}
+			} else if (Double.valueOf(temp[1]) == 0) {
+				result.put(temp[0], "未检出");
+			} else if (Double.valueOf(temp[1]) < 0) {
+				result.put(temp[0], "未检");
+			}
+		}
+		return result;
+	}
+
+	private Map<String, Object> getReportListHeader(Map pollMap) {
+		Map<String, Object> headerMap = new LinkedHashMap<String, Object>();
+		headerMap.put("LAB_CODE", "实验室编码");
+		headerMap.put("CNAME", "样品名称");
+		int headerCount = 0;
+		Iterator pollKeyIt = pollMap.keySet().iterator();
+		while (pollKeyIt.hasNext()) {
+			headerMap.put("CLM_" + (headerCount + 1), pollMap.get(pollKeyIt.next()));
+			headerCount++;
+		}
+		return headerMap;
+	}
+	
 	/**
 	 * 取得上报的污染物title
 	 * 
@@ -965,7 +1039,7 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
       detectionEntity.setOrgCode(detectionCode);
       detectionEntity.setProjectCode(projectCode);
   
-      List<Map<String, Object>> reportList = getReportList(detectionEntity);
+      List<Map<String, Object>> reportList = getReportListNew(detectionEntity);
       // 二次封装数据做成导出格式
       if(reportList.size() > 0){
         Map<String, Object> titleMap = reportList.get(0);

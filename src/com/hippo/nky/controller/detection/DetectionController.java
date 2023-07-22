@@ -727,7 +727,8 @@ public class DetectionController extends BaseController {
 		detectionEntity.setOrgCode(detectionCode);
 		
 //		List<DetectionEntity> reportPollList = detectionService.getProjectPollInfo(detectionEntity);
-		List<Map<String, Object>> reportList = detectionService.getReportList(detectionEntity);
+//		List<Map<String, Object>> reportList = detectionService.getReportList(detectionEntity);
+		List<Map<String, Object>> reportList = detectionService.getReportListNew(detectionEntity);
 		attributes.put("reportList", reportList);
 		j.setAttributes(attributes);
 		j.setSuccess(true);

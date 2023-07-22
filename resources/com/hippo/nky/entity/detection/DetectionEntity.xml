@@ -1230,6 +1230,98 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	          )}
           ]]> 
 	</select>
+	<!-- 新的取得上报的数据 -->
+	<resultMap type="java.util.HashMap" id="getReportListNewMap">
+		<result column="lab_code" property="labCode" />
+		<result column="CNAME" property="cname" />
+		<result column="DETERESULT" property="deteResult" />
+	</resultMap>
+
+	<select id="getReportListNew" parameterType="java.util.HashMap"
+		resultMap="getReportListNewMap">
+		SELECT NSI.LAB_CODE,
+		       NAC.CNAME,
+		       WM_CONCAT(NDI.CAS_CODE || '#EM#' || NDI.DETECTION_VALUE || '#EM#' || NDI.IS_OVERPROOF) AS DETERESULT
+		FROM   NKY_SAMPLING_INFO NSI,
+		       NKY_MONITORING_PROJECT NMP,
+		       NKY_MONITORING_TASK NMT,
+			   NKY_DETECTION_INFORMATION NDI,
+			   NKY_AGR_CATEGORY NAC,
+			   NKY_STANDARD_VERSION NSV,
+			   NKY_ORGANIZATION_INFO NOI
+		WHERE  NSI.SAMPLE_STATUS = '4'
+		   AND NSI.TASK_CODE = NMT.TASK_CODE
+		   AND NMT.PROJECT_CODE = NMP.PROJECT_CODE
+		   AND NSI.SAMPLE_CODE = NDI.SAMPLE_CODE
+		   AND NAC.CODE = NSI.AGR_CODE
+		   AND NAC.VERSIONID = NSV.AGR_VERSION_ID
+		   AND NSV.ID = NMP.JUDGE_VERSION_ID
+		   AND NMT.ORG_CODE = NOI.CODE
+		<if test="projectCode != '' and projectCode != null ">
+			AND NMT.PROJECT_CODE = #{projectCode}
+		</if>
+		<if test="orgCode != '' and orgCode != null ">
+			AND NOI.ID = #{orgCode}
+		</if>
+		<choose>
+			<when test="selCondtion != null and selCondtion == 1">
+				AND NSI.SAMPLE_CODE IN (SELECT DISTINCT NDI.SAMPLE_CODE
+					FROM NKY_DETECTION_INFORMATION NDI,
+						 NKY_SAMPLING_INFO NSI,
+						 NKY_MONITORING_TASK NMT,
+						 NKY_ORGANIZATION_INFO NOI
+				   WHERE NSI.SAMPLE_STATUS = '4'
+					 AND NSI.TASK_CODE = NMT.TASK_CODE
+					 AND NSI.SAMPLE_CODE = NDI.SAMPLE_CODE
+					 AND NMT.ORG_CODE = NOI.CODE
+				<if test="projectCode != '' and projectCode != null ">
+					AND NMT.PROJECT_CODE = #{projectCode}
+				</if>
+				<if test="orgCode != '' and orgCode != null ">
+					AND NOI.ID = #{orgCode}
+				</if>
+				AND NDI.DETECTION_VALUE > 0)
+			</when>
+			<when test="selCondtion != null and selCondtion == 2">
+				AND NSI.SAMPLE_CODE IN (SELECT DISTINCT NDI.SAMPLE_CODE
+					FROM NKY_DETECTION_INFORMATION NDI,
+						 NKY_SAMPLING_INFO NSI,
+						 NKY_MONITORING_TASK NMT,
+						 NKY_ORGANIZATION_INFO NOI
+				   WHERE NSI.SAMPLE_STATUS = '4'
+					 AND NSI.TASK_CODE = NMT.TASK_CODE
+					 AND NSI.SAMPLE_CODE = NDI.SAMPLE_CODE
+					 AND NMT.ORG_CODE = NOI.CODE
+				<if test="projectCode != '' and projectCode != null ">
+					AND NMT.PROJECT_CODE = #{projectCode}
+				</if>
+				<if test="orgCode != '' and orgCode != null ">
+					AND NOI.ID = #{orgCode}
+				</if>
+				AND NDI.IS_OVERPROOF = '1')
+			</when>
+			<when test="selCondtion != null and selCondtion == 3">
+				AND NSI.SAMPLE_CODE IN (SELECT DISTINCT NDI.SAMPLE_CODE
+					FROM NKY_DETECTION_INFORMATION NDI,
+						 NKY_SAMPLING_INFO NSI,
+						 NKY_MONITORING_TASK NMT,
+						 NKY_ORGANIZATION_INFO NOI
+				   WHERE NSI.SAMPLE_STATUS = '4'
+					 AND NSI.TASK_CODE = NMT.TASK_CODE
+					 AND NSI.SAMPLE_CODE = NDI.SAMPLE_CODE
+					 AND NMT.ORG_CODE = NOI.CODE
+				<if test="projectCode != '' and projectCode != null ">
+					AND NMT.PROJECT_CODE = #{projectCode}
+				</if>
+				<if test="orgCode != '' and orgCode != null ">
+					AND NOI.ID = #{orgCode}
+				</if>
+				AND NDI.DETECTION_VALUE <![CDATA[<]]>
+				0)
+			</when>
+		</choose>
+		GROUP BY NSI.LAB_CODE, NAC.CNAME
+	</select>
 	
 	<!-- 设置样品的状态为上报完成-->
 	<update id="setDetectionReported" parameterType="com.hippo.nky.entity.detection.DetectionEntity">

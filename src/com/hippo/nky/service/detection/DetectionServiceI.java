@@ -164,6 +164,14 @@ public interface DetectionServiceI extends CommonService {
 	public List<Map<String, Object>> getReportList(DetectionEntity detectionEntity);
 	
 	/**
+	 * 取得上报列表
+	 * 
+	 * @param detectionEntity
+	 * @return
+	 */
+	public List<Map<String, Object>> getReportListNew(DetectionEntity detectionEntity);
+	
+	/**
 	 * 取得上报的污染物title
 	 * 
 	 * @param detectionEntity
