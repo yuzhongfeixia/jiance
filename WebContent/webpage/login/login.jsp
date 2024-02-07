@@ -8,7 +8,10 @@
 <link href="css/style.css" rel="stylesheet" type="text/css" />
 
 <link href="plug-in/login/css/zice.style.css" rel="stylesheet" type="text/css" />
-  <style type="text/css">
+<style type="text/css">
+input[type=text],input[type=password] {
+	height:27px
+}
 </style>
 </head>
 
@@ -20,7 +23,7 @@
    <span>登陆成功!请稍后....</span>
   </div>
 	<form action="loginController.do?login" name="loginForm" method="post"  check="loginController.do?checkuser">
-		<table width="524" height="313" border="0" align="center"
+		<table width="524" border="0" align="center"
 			cellpadding="0" cellspacing="0">
 			<tr>
 				<td><img src="images/login_img_01.jpg" /></td>
@@ -30,25 +33,32 @@
 			<tr>
 				<td><img src="images/login_img_04.jpg" /></td>
 				<td valign="bottom" background="images/login_img_05.jpg"><table
-						width="247" height="108" border="0" align="center" cellpadding="0"
-						cellspacing="0">
+						width="247px"  border="0" align="center"
+						cellpadding="0" cellspacing="0">
 						<tr>
-							<td width="52" height="36" align="left">用&nbsp;&nbsp;户：</td>
+							<td width="60" align="left">用&nbsp;&nbsp;户：</td>
 							<td width="177" align="left"><input type="text"
-								name="userName" id="userName" class="login_ipt" maxlength="20"/>
-							</td>
-							<td width="18" align="left">&nbsp;</td>
+								name="userName" id="userName" nullmsg="请输入用户名！"
+								class="login_ipt" maxlength="20" /></td>
+							<td width="10" align="left">&nbsp;</td>
 						</tr>
 						<tr>
 							<td align="left">密&nbsp;&nbsp;码：</td>
 							<td align="left"><input type="password" name="password"
-								id="password" class="login_ipt" maxlength="20"/></td>
+								id="password" nullmsg="请输入密码！" class="login_ipt" maxlength="20" /></td>
 							<td align="left">&nbsp;</td>
+						</tr>
+						<tr>
+							<td align="left">验证码：</td>
+							<td align="left"><input type="text" name="code" id="code" style="width: 75px;"
+								nullmsg="请输入验证码！" class="login_ipt" maxlength="20" /><img
+								id="codeImg" onclick="resetCode()" width="100px"
+								style="vertical-align: bottom;" /></td>
 						</tr>
 						<tr>
 							<td>&nbsp;</td>
 							<td align="right" valign="bottom"><input name="but_login"
-								type="button" class="login_btn" value="登&nbsp;录"  id="but_login"/></td>
+								type="button" class="login_btn" value="登&nbsp;录" id="but_login" /></td>
 							<td>&nbsp;</td>
 						</tr>
 					</table></td>

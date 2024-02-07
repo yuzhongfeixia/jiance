@@ -16,6 +16,7 @@ public final class Globals {
 	 * 保存用户到SESSION
 	 */
 	public static String USER_SESSION="USER_SESSION";
+	public static String USER_VERFIRY_CODE = "VERIFY_CODE";
 	/**
 	 * 人员类型
 	 */

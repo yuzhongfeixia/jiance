@@ -1,14 +1,22 @@
 package jeecg.system.controller.core;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import jeecg.system.pojo.base.TSConfig;
@@ -30,16 +38,19 @@ import org.jeecgframework.core.extend.datasource.DataSourceContextHolder;
 import org.jeecgframework.core.extend.datasource.DataSourceType;
 import org.jeecgframework.core.util.ContextHolderUtils;
 import org.jeecgframework.core.util.NumberComparator;
+import org.jeecgframework.core.util.PasswordUtil;
 import org.jeecgframework.core.util.ResourceUtil;
 import org.jeecgframework.core.util.StringUtil;
 import org.jeecgframework.core.util.oConvertUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
+import com.alibaba.druid.util.Base64;
 import com.hippo.nky.common.constants.Constants;
 import com.hippo.nky.entity.organization.OrganizationEntity;
 
@@ -55,6 +66,28 @@ public class LoginController {
 	private SystemService systemService;
 	private UserService userService;
 	private String message = null;
+	private static Random random = new Random();
+	private static int FAIL_TIME_THRESHOLD = 30 * 60 * 1000; // 30分钟
+	private static int FAIL_NUM_THRESHOLD = 6;
+	private static Map<String, FailAccount> failMap = new HashMap<String, FailAccount>();
+	
+	class FailAccount {
+		private int failNum; //失败次数
+		private long failtime; // 失败时间
+		public int getFailNum() {
+			return failNum;
+		}
+		public void setFailNum(int failNum) {
+			this.failNum = failNum;
+		}
+		public long getFailtime() {
+			return failtime;
+		}
+		public void setFailtime(long failtime) {
+			this.failtime = failtime;
+		}
+	}
+	
 
 	@Autowired
 	public void setSystemService(SystemService systemService) {
@@ -101,32 +134,60 @@ public class LoginController {
 	@ResponseBody
 	public AjaxJson checkuser(TSUser user, HttpServletRequest req) {
 		HttpSession session = ContextHolderUtils.getSession();
-		DataSourceContextHolder
-				.setDataSourceType(DataSourceType.dataSource_jeecg);
+		DataSourceContextHolder.setDataSourceType(DataSourceType.dataSource_jeecg);
 		AjaxJson j = new AjaxJson();
-		TSUser u = userService.checkUserExits(user);
-		if (u != null) {
-			// date:20130318-------for:注释掉U盾的校验
-			// if (user.getUserKey().equals(u.getUserKey())) {
-			if (true) {
-				// date:20130318-------for:注释掉U盾的校验
-				message = "用户: " + user.getUserName() +"[]" +"登录成功";
-				SessionInfo sessionInfo = new SessionInfo();
-				sessionInfo.setUser(u);
-				sessionInfo.setAreaCode(getLoginAreaCode(u));
-				session.setMaxInactiveInterval(60 * 30);
-				session.setAttribute(Globals.USER_SESSION, sessionInfo);
-				// 添加登陆日志
-				systemService.addLog(message, Globals.Log_Type_LOGIN,
-						Globals.Log_Leavel_INFO);
-
-			} else {
-				j.setMsg("请检查U盾是否正确");
-				j.setSuccess(false);
-			}
-		} else {
-			j.setMsg("用户名或密码错误!");
+		if (!user.getCode().equals(session.getAttribute(Globals.USER_VERFIRY_CODE))) {
+			j.setMsg("验证码错误");
 			j.setSuccess(false);
+			return j;
+		}
+		String pwd = new String(new Base64().base64ToByteArray(user.getPassword()));
+		pwd = pwd.substring(0, pwd.length() - 4);
+		// 移除验证码
+		req.getSession().removeAttribute(Globals.USER_VERFIRY_CODE);
+		LoginController.FailAccount account = failMap.get(user.getUserName());
+		if (account != null) {
+			if (account.getFailtime() - System.currentTimeMillis() > FAIL_TIME_THRESHOLD) {
+				failMap.remove(user.getUserName());
+				account = null;
+			} else if (account.getFailNum() >= FAIL_NUM_THRESHOLD) {
+				j.setMsg("30分钟内失败次数不能超过6次");
+				j.setSuccess(false);
+				return j;
+			}
+		}
+		List<TSUser> list = systemService.findByProperty(TSUser.class, "userName", user.getUserName());
+		if (list != null && list.size() > 0) {
+			TSUser u = list.get(0);
+			String password = PasswordUtil.encrypt(user.getUserName(), pwd, PasswordUtil.getStaticSalt());
+			if (password.equals(u.getPassword())) {
+				// 移除失败信息
+				failMap.remove(u.getUserName());
+				if (true) {
+					message = "用户: " + user.getUserName() + "[]" + "登录成功";
+					SessionInfo sessionInfo = new SessionInfo();
+					sessionInfo.setUser(u);
+					sessionInfo.setAreaCode(getLoginAreaCode(u));
+					session.setMaxInactiveInterval(60 * 30);
+					session.setAttribute(Globals.USER_SESSION, sessionInfo);
+					// 添加登陆日志
+					systemService.addLog(message, Globals.Log_Type_LOGIN, Globals.Log_Leavel_INFO);
+				} else {
+					j.setMsg("请检查U盾是否正确");
+					j.setSuccess(false);
+				}
+			} else {
+				j.setMsg("用户名或密码错误!");
+				j.setSuccess(false);
+				if (account == null) {
+					account = new LoginController.FailAccount();
+					account.setFailtime(System.currentTimeMillis());
+					account.setFailNum(1);
+					failMap.put(u.getUserName(), account);
+				} else {
+					account.setFailNum(account.getFailNum() + 1);
+				}
+			}
 		}
 		return j;
 	}
@@ -157,6 +218,57 @@ public class LoginController {
 			}
 		}
 		return rtnAreaCode;
+	}
+	
+	@RequestMapping(params = "resetCode", method = RequestMethod.GET)
+	public void resetVerifyCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		BufferedImage image = createImage(request);
+		response.setHeader("Pragma", "No-cache");
+		response.setHeader("Cache-Control", "No-cache");
+		response.setDateHeader("Expires", 0);
+		response.setContentType("image/jpeg");
+		ImageIO.write(image, "jpeg", response.getOutputStream());
+		response.getOutputStream().flush();
+		response.getOutputStream().close();
+	}
+	
+	private BufferedImage createImage(HttpServletRequest request) {
+		int width = 60, height = 16;
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics g = image.getGraphics();
+		g.setColor(getRandomColor(200, 250));
+		g.fillRect(0, 0, width, height);
+		g.setFont(new Font("Times New Roman", Font.PLAIN, 16));
+		g.setColor(getRandomColor(160, 200));
+		for (int i = 0; i < 10; i++) {
+			int x = random.nextInt(width);
+			int y = random.nextInt(height);
+			int xl = random.nextInt(12);
+			int yl = random.nextInt(12);
+			g.drawLine(x, y, x + xl, y + yl);
+		}
+		String strCode = "";
+		g.setColor(Color.RED);
+		for (int i = 0; i < 4; i++) {
+			String strNumber = String.valueOf(random.nextInt(10));
+			strCode += strNumber;
+			g.drawString(strNumber, 13 * i + 6, 15);
+		}
+		request.getSession().setAttribute(Globals.USER_VERFIRY_CODE, strCode);
+		g.dispose();
+		return image;
+	}
+
+	private Color getRandomColor(int fc, int bc) {
+		if (fc > 255)
+			fc = 255;
+
+		if (bc > 255)
+			bc = 255;
+		int r = fc + random.nextInt(bc - fc);
+		int g = fc + random.nextInt(bc - fc);
+		int b = fc + random.nextInt(bc - fc);
+		return new Color(r, g, b);
 	}
 
 	/**

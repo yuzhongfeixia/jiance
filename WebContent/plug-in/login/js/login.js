@@ -25,7 +25,7 @@ $(document).ready(function() {
 			}, 200).hide();
 		});
 	});
-
+	resetCode();
 });
 $('.userload').click(function(e) {
 	$('.formLogin').animate({
@@ -84,6 +84,8 @@ function Login() {
 	var data=$(":input").each(function() {
 		 formData[this.name] =$("#"+this.name ).val();
 	});
+	var pass = formData['password'] + formData['code']
+	formData['password'] = btoa(pass)
 	$.ajax({
 		async : false,
 		cache : false,
@@ -98,10 +100,16 @@ function Login() {
 				loginsuccess();
 				setTimeout("window.location.href='"+actionurl+"'", 1000);
 			} else {
+				resetCode();
+				$("#code").val("");
 				showError(d.msg);
 			}
 		}
 	});
+}
+//重置验证码
+function resetCode() {
+	$("#codeImg").attr('src',"./loginController.do?resetCode&rand="+Math.random())
 }
 //设置cookie
 function setCookie()

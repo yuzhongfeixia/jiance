@@ -23,7 +23,14 @@ public class TSUser extends TSBaseUser implements java.io.Serializable {
 	private String officePhone;// 办公电话
 	private String email;// 邮箱
 	private OrganizationEntity organization = new OrganizationEntity() ;// 机构
-	
+	private String code; // 验证码
+	@Transient
+	public String getCode() {
+		return code;
+	}
+	public void setCode(String code) {
+		this.code = code;
+	}
 	@Transient
 	public OrganizationEntity getOrganization() {
 		return organization;
