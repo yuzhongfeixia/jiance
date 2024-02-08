@@ -70,24 +70,27 @@ public class LoginController {
 	private static int FAIL_TIME_THRESHOLD = 30 * 60 * 1000; // 30分钟
 	private static int FAIL_NUM_THRESHOLD = 6;
 	private static Map<String, FailAccount> failMap = new HashMap<String, FailAccount>();
-	
+
 	class FailAccount {
-		private int failNum; //失败次数
+		private int failNum; // 失败次数
 		private long failtime; // 失败时间
+
 		public int getFailNum() {
 			return failNum;
 		}
+
 		public void setFailNum(int failNum) {
 			this.failNum = failNum;
 		}
+
 		public long getFailtime() {
 			return failtime;
 		}
+
 		public void setFailtime(long failtime) {
 			this.failtime = failtime;
 		}
 	}
-	
 
 	@Autowired
 	public void setSystemService(SystemService systemService) {
@@ -118,8 +121,7 @@ public class LoginController {
 		user.setUserName("admin");
 		String newPwd = "123456";
 		userService.pwdInit(user, newPwd);
-		modelAndView = new ModelAndView(new RedirectView(
-				"loginController.do?login"));
+		modelAndView = new ModelAndView(new RedirectView("loginController.do?login"));
 		return modelAndView;
 	}
 
@@ -147,7 +149,7 @@ public class LoginController {
 		req.getSession().removeAttribute(Globals.USER_VERFIRY_CODE);
 		LoginController.FailAccount account = failMap.get(user.getUserName());
 		if (account != null) {
-			if (account.getFailtime() - System.currentTimeMillis() > FAIL_TIME_THRESHOLD) {
+			if (System.currentTimeMillis() - account.getFailtime() > FAIL_TIME_THRESHOLD) {
 				failMap.remove(user.getUserName());
 				account = null;
 			} else if (account.getFailNum() >= FAIL_NUM_THRESHOLD) {
@@ -219,7 +221,7 @@ public class LoginController {
 		}
 		return rtnAreaCode;
 	}
-	
+
 	@RequestMapping(params = "resetCode", method = RequestMethod.GET)
 	public void resetVerifyCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		BufferedImage image = createImage(request);
@@ -231,7 +233,7 @@ public class LoginController {
 		response.getOutputStream().flush();
 		response.getOutputStream().close();
 	}
-	
+
 	private BufferedImage createImage(HttpServletRequest request) {
 		int width = 60, height = 16;
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -281,35 +283,33 @@ public class LoginController {
 	 */
 	@RequestMapping(params = "login")
 	public String login(HttpServletRequest request) {
-		DataSourceContextHolder
-				.setDataSourceType(DataSourceType.dataSource_jeecg);
+		DataSourceContextHolder.setDataSourceType(DataSourceType.dataSource_jeecg);
 		TSUser user = ResourceUtil.getSessionUserName();
 		String roles = "";
 		if (user != null) {
-			List<TSRoleUser> rUsers = systemService.findByProperty(
-					TSRoleUser.class, "TSUser.id", user.getId());
+			List<TSRoleUser> rUsers = systemService.findByProperty(TSRoleUser.class, "TSUser.id", user.getId());
 			for (TSRoleUser ru : rUsers) {
 				TSRole role = ru.getTSRole();
-				roles += role.getRoleName()+"," ;
+				roles += role.getRoleName() + ",";
 			}
-			if(roles.length()>0){
-				roles = roles.substring(0,roles.length()-1);
+			if (roles.length() > 0) {
+				roles = roles.substring(0, roles.length() - 1);
 			}
 			request.setAttribute("roleName", roles);
 			request.setAttribute("userName", user.getRealName());
-			//默认风格
+			// 默认风格
 			String indexStyle = "default";
 			Cookie[] cookies = request.getCookies();
 			for (Cookie cookie : cookies) {
-				if(cookie==null || StringUtils.isEmpty(cookie.getName())){
+				if (cookie == null || StringUtils.isEmpty(cookie.getName())) {
 					continue;
 				}
-				if(cookie.getName().equalsIgnoreCase("JEECGINDEXSTYLE")){
+				if (cookie.getName().equalsIgnoreCase("JEECGINDEXSTYLE")) {
 					indexStyle = cookie.getValue();
 				}
 			}
-			//要添加自己的风格，复制下面三行即可
-			if(StringUtils.isNotEmpty(indexStyle) && indexStyle.equalsIgnoreCase("bootstrap")){
+			// 要添加自己的风格，复制下面三行即可
+			if (StringUtils.isNotEmpty(indexStyle) && indexStyle.equalsIgnoreCase("bootstrap")) {
 				return "main/bootstrap_main";
 			}
 			return "main/index";
@@ -331,14 +331,11 @@ public class LoginController {
 		ModelAndView modelAndView = null;
 
 		HttpSession session = ContextHolderUtils.getSession();
-		String versionCode = oConvertUtils.getString(request
-				.getParameter("versionCode"));
+		String versionCode = oConvertUtils.getString(request.getParameter("versionCode"));
 		TSUser user = ResourceUtil.getSessionUserName();
 		// 根据版本编码获取当前软件版本信息
-		TSVersion version = systemService.findUniqueByProperty(TSVersion.class,
-				"versionCode", versionCode);
-		List<TSRoleUser> rUsers = systemService.findByProperty(
-				TSRoleUser.class, "TSUser.id", user.getId());
+		TSVersion version = systemService.findUniqueByProperty(TSVersion.class, "versionCode", versionCode);
+		List<TSRoleUser> rUsers = systemService.findByProperty(TSRoleUser.class, "TSUser.id", user.getId());
 		for (TSRoleUser ru : rUsers) {
 			TSRole role = ru.getTSRole();
 			session.removeAttribute(role.getId());
@@ -346,10 +343,8 @@ public class LoginController {
 
 		// 判断用户是否为空不为空则清空session中的用户object
 		session.removeAttribute(Globals.USER_SESSION);// 注销该操作用户
-		systemService.addLog("用户" + user.getUserName() + "已退出",
-				Globals.Log_Type_EXIT, Globals.Log_Leavel_INFO);
-		modelAndView = new ModelAndView(new RedirectView(
-				"loginController.do?login"));
+		systemService.addLog("用户" + user.getUserName() + "已退出", Globals.Log_Type_EXIT, Globals.Log_Leavel_INFO);
+		modelAndView = new ModelAndView(new RedirectView("loginController.do?login"));
 
 		return modelAndView;
 	}
@@ -366,8 +361,7 @@ public class LoginController {
 		// 登陆者的权限
 		if (user.getId() == null) {
 			session.removeAttribute(Globals.USER_SESSION);
-			return new ModelAndView(
-					new RedirectView("loginController.do?login"));
+			return new ModelAndView(new RedirectView("loginController.do?login"));
 		}
 		Map<Integer, List<TSFunction>> menuMap = getFunctionMap(user);
 		request.setAttribute("menuMap", menuMap);
@@ -380,66 +374,66 @@ public class LoginController {
 		}
 		return new ModelAndView("main/sidebar");
 	}
-	
+
 	/**
 	 * 取得自动完成菜单项
 	 * 
 	 * @param menuMap
 	 * @return
 	 */
-	private Map<String, String> getSidebarDataSource(Map<Integer, List<TSFunction>> menuMap){
+	private Map<String, String> getSidebarDataSource(Map<Integer, List<TSFunction>> menuMap) {
 		Map<String, String> result = new HashMap<String, String>();
 		StringBuffer dataSource = new StringBuffer();
 		StringBuffer dataIds = new StringBuffer();
 		dataSource.append("[");
 		dataIds.append("[");
-		for(Integer inte: menuMap.keySet()){
-			for(TSFunction function: menuMap.get(inte)){
+		for (Integer inte : menuMap.keySet()) {
+			for (TSFunction function : menuMap.get(inte)) {
 				StringBuffer tempSf = new StringBuffer();
 				tempSf.append(Constants.HTML_MARK_DOUBLE_QUOTES);
 				tempSf.append(function.getFunctionName());
 				tempSf.append(Constants.HTML_MARK_DOUBLE_QUOTES);
 				tempSf.append(",");
 				dataSource.append(tempSf);
-				
+
 				dataIds.append(Constants.HTML_MARK_DOUBLE_QUOTES);
 				dataIds.append(function.getId());
 				dataIds.append(Constants.HTML_MARK_DOUBLE_QUOTES);
 				dataIds.append(",");
 			}
 		}
-		
+
 		String sourceStr = dataSource.toString();
 		sourceStr = sourceStr.substring(0, sourceStr.length() - 1) + "]";
 		result.put("dataSource", sourceStr);
-		
+
 		String idsStr = dataIds.toString();
 		idsStr = idsStr.substring(0, idsStr.length() - 1) + "]";
 		result.put("dataIds", idsStr);
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * 获取权限的map
+	 * 
 	 * @param user
 	 * @return
 	 */
 	private Map<Integer, List<TSFunction>> getFunctionMap(TSUser user) {
-		Map<Integer, List<TSFunction>> functionMap  = new HashMap<Integer, List<TSFunction>>();
-		Map<String,TSFunction> loginActionlist = getUserFunction(user);
+		Map<Integer, List<TSFunction>> functionMap = new HashMap<Integer, List<TSFunction>>();
+		Map<String, TSFunction> loginActionlist = getUserFunction(user);
 		if (loginActionlist.size() > 0) {
 			Collection<TSFunction> allFunctions = loginActionlist.values();
 			for (TSFunction function : allFunctions) {
 				if (!functionMap.containsKey(function.getFunctionLevel() + 0)) {
-					functionMap.put(function.getFunctionLevel() + 0,
-							new ArrayList<TSFunction>());
+					functionMap.put(function.getFunctionLevel() + 0, new ArrayList<TSFunction>());
 				}
 				functionMap.get(function.getFunctionLevel() + 0).add(function);
 			}
 			// 菜单栏排序
 			Collection<List<TSFunction>> c = functionMap.values();
-			for (List<TSFunction> list :c) {
+			for (List<TSFunction> list : c) {
 				Collections.sort(list, new NumberComparator());
 			}
 		}
@@ -448,34 +442,31 @@ public class LoginController {
 
 	/**
 	 * 获取用户菜单列表
+	 * 
 	 * @param user
-	 * @return 
+	 * @return
 	 */
 	private Map<String, TSFunction> getUserFunction(TSUser user) {
 		HttpSession session = ContextHolderUtils.getSession();
-		Map<String,TSFunction> loginActionlist = new HashMap<String, TSFunction>();
-		List<TSRoleUser> rUsers = systemService.findByProperty(
-				TSRoleUser.class, "TSUser.id", user.getId());
+		Map<String, TSFunction> loginActionlist = new HashMap<String, TSFunction>();
+		List<TSRoleUser> rUsers = systemService.findByProperty(TSRoleUser.class, "TSUser.id", user.getId());
 		for (TSRoleUser ru : rUsers) {
 			TSRole role = ru.getTSRole();
-			List<TSRoleFunction> roleFunctionList = ResourceUtil
-					.getSessionTSRoleFunction(role.getId());
+			List<TSRoleFunction> roleFunctionList = ResourceUtil.getSessionTSRoleFunction(role.getId());
 			if (roleFunctionList == null || roleFunctionList.size() == 0) {
 				session.setMaxInactiveInterval(60 * 30);
-				roleFunctionList = systemService.findByProperty(
-						TSRoleFunction.class, "TSRole.id", role.getId());
+				roleFunctionList = systemService.findByProperty(TSRoleFunction.class, "TSRole.id", role.getId());
 				session.setAttribute(role.getId(), roleFunctionList);
 			} else {
 				if (roleFunctionList.get(0).getId() == null) {
-					roleFunctionList = systemService.findByProperty(
-							TSRoleFunction.class, "TSRole.id", role.getId());
+					roleFunctionList = systemService.findByProperty(TSRoleFunction.class, "TSRole.id", role.getId());
 				}
 			}
 			for (TSRoleFunction roleFunction : roleFunctionList) {
 				TSFunction function = roleFunction.getTSFunction();
-				loginActionlist.put(function.getId(),function);
+				loginActionlist.put(function.getId(), function);
 			}
-		}		
+		}
 		return loginActionlist;
 	}
 
@@ -488,6 +479,7 @@ public class LoginController {
 	public ModelAndView home(HttpServletRequest request) {
 		return new ModelAndView("main/home");
 	}
+
 	/**
 	 * 无权限页面提示跳转
 	 * 
@@ -495,17 +487,14 @@ public class LoginController {
 	 */
 	@RequestMapping(params = "noAuth")
 	public ModelAndView noAuth(HttpServletRequest request) {
-		ModelAndView modelAndView = new ModelAndView(new RedirectView(
-				"loginController.do?login"));
+		ModelAndView modelAndView = new ModelAndView(new RedirectView("loginController.do?login"));
 
 		return modelAndView;
 	}
-		/**
-	* @Title: top
-	* @Description: bootstrap头部菜单请求
-	* @param request
-	* @return ModelAndView    
-	* @throws
+
+	/**
+	 * @Title: top @Description: bootstrap头部菜单请求 @param request @return
+	 *         ModelAndView @throws
 	 */
 	@RequestMapping(params = "top")
 	public ModelAndView top(HttpServletRequest request) {
@@ -514,14 +503,13 @@ public class LoginController {
 		// 登陆者的权限
 		if (user.getId() == null) {
 			session.removeAttribute(Globals.USER_SESSION);
-			return new ModelAndView(
-					new RedirectView("loginController.do?login"));
+			return new ModelAndView(new RedirectView("loginController.do?login"));
 		}
 		request.setAttribute("menuMap", getFunctionMap(user));
 		List<TSConfig> configs = userService.loadAll(TSConfig.class);
 		for (TSConfig tsConfig : configs) {
 			request.setAttribute(tsConfig.getCode(), tsConfig.getContents());
 		}
-			return new ModelAndView("main/bootstrap_top");
+		return new ModelAndView("main/bootstrap_top");
 	}
 }
