@@ -143,7 +143,11 @@ function getProjectCode_opsd(){
 							<th class="center hidden-480">受检单位</th>
 							<th class="center hidden-480">样品名称</th>
 							<th class="center hidden-480">监测环节</th>
-							<th class="center hidden-480">不合格参数及检测值(${sysUnit})</th>
+							<th class="center hidden-480">不合格参数及检测值( <c:choose>
+									<c:when test="${industryCode == 'f'}">mg/kg</c:when>
+									<c:otherwise>μg/kg</c:otherwise>
+								</c:choose> )
+							</th>
 							<th class="center hidden-480">检测机构</th>
 						</tr>
 					</thead>
