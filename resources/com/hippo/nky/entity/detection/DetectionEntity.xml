@@ -1765,6 +1765,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="sampleName != '' and sampleName != null">
 			 	AND AGR.CNAME LIKE '%' || #{sampleName} || '%'
 			</if>
+			AND NMP.STATE = '1'
 	</select>
 	<!-- 检测信息退回列表取得 (审核已通过已退回)-->
 	<select id="getDetectionSetBack2" resultMap="detectionSetBackResult" parameterType="java.util.HashMap">
@@ -1791,6 +1792,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="sampleName != '' and sampleName != null">
 			 	AND AGR.CNAME LIKE '%' || #{sampleName} || '%'
 			</if>
+			AND NMP.STATE = '1'
 		) T
 	 WHERE RN > #{beginIndex} AND RN <![CDATA[ <= ]]>  #{endIndex}	
 	</select>
@@ -1825,11 +1827,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		    NSI.ID,
 		    NMT.PROJECT_CODE,
 		    NSI.AGR_CODE
-		 FROM
-		   NKY_SAMPLING_INFO NSI
-		   INNER JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
+		 FROM NKY_SAMPLING_INFO NSI
+		 LEFT JOIN NKY_MONITORING_TASK NMT ON (NSI.TASK_CODE = NMT.TASK_CODE)
+		 LEFT JOIN NKY_MONITORING_PROJECT NMP ON (NMP.PROJECT_CODE = NMT.PROJECT_CODE)
 		 WHERE NSI.LAB_CODE = #{labCode}
 		 AND NSI.DETECTION_CODE = #{ogrCode}
+		 AND NMP.STATE = '1'
 	</select>
 	
   <resultMap type="java.util.HashMap" id="detectionSetBackCheckResult">
