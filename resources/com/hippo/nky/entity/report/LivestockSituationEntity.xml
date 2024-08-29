@@ -179,7 +179,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
       SELECT
            TST.TYPENAME AS MONITORING_LINKK,
            count(1) AS samplingCount,
-           SUM(DECODE(T2.overStanderdCount,0,1,'',1,1)) AS qualifiedCount
+           SUM(DECODE(T2.overStanderdCount, 0, 0, 1)) AS qualifiedCount
            FROM NKY_SAMPLING_INFO NSI
            LEFT JOIN NKY_MONITORING_TASK NMT ON(NSI.TASK_CODE = NMT.TASK_CODE)
            LEFT JOIN NKY_MONITORING_PROJECT NMP ON(NMP.PROJECT_CODE = NMT.PROJECT_CODE)
