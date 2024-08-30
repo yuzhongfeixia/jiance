@@ -3,6 +3,8 @@ package jeecg.system.controller.core;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -237,11 +239,12 @@ public class LoginController {
 	private BufferedImage createImage(HttpServletRequest request) {
 		int width = 60, height = 16;
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		Graphics g = image.getGraphics();
+		Graphics2D g = (Graphics2D)image.getGraphics();
 		g.setColor(getRandomColor(200, 250));
 		g.fillRect(0, 0, width, height);
 		g.setFont(new Font("Times New Roman", Font.PLAIN, 16));
 		g.setColor(getRandomColor(160, 200));
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
 		for (int i = 0; i < 10; i++) {
 			int x = random.nextInt(width);
 			int y = random.nextInt(height);
@@ -250,11 +253,12 @@ public class LoginController {
 			g.drawLine(x, y, x + xl, y + yl);
 		}
 		String strCode = "";
-		g.setColor(Color.RED);
+//		g.setColor(Color.RED);
 		for (int i = 0; i < 4; i++) {
 			String strNumber = String.valueOf(random.nextInt(10));
-			strCode += strNumber;
+			g.setColor(getRandomColor(0, 150));
 			g.drawString(strNumber, 13 * i + 6, 15);
+			strCode += strNumber;
 		}
 		request.getSession().setAttribute(Globals.USER_VERFIRY_CODE, strCode);
 		g.dispose();
