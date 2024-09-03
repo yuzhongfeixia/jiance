@@ -2005,6 +2005,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result column="UNIT_ADDRESS" property="unitAddress" />
 		<result column="UNIT_FULLNAME" property="unitFullName" />
 		<result column="DETERESULT" property="deteResult" />
+		<result column="SAMPLING_ADDRESS" property="samplingAddress"/>
 	</resultMap>
 	
 	<select id="selectMonitoringDectionListCount" parameterType="java.util.HashMap" resultType="java.lang.Integer">
@@ -2052,6 +2053,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                        COUNTY.AREANAME AS COUNTYNAME,
                        NSI.UNIT_ADDRESS,
                        NSI.UNIT_FULLNAME,
+                       NSI.SAMPLING_ADDRESS,
                        WM_CONCAT(DETEINFO.CAS_CODE || '#EM#' ||
                                  DETEINFO.DETECTION_VALUE || '#EM#' ||
                                  DETEINFO.IS_OVERPROOF) AS DETERESULT
@@ -2092,7 +2094,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                           CITY.AREANAME,
                           COUNTY.AREANAME,
                           NSI.UNIT_ADDRESS,
-                          NSI.UNIT_FULLNAME) T)
+                          NSI.UNIT_FULLNAME,
+                          NSI.SAMPLING_ADDRESS) T)
  				WHERE RN > #{beginIndex} AND RN <![CDATA[ <= ]]> #{endIndex} 
 	</select>
 </mapper>

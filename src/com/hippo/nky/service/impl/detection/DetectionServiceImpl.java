@@ -1089,7 +1089,8 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 				.findListByMyBatis(MONITORINGPROJECTENTITY_NAME_SPACE + "selectMonitoringDectionPollList", projectCode);
 		Map pollMap = getAgrPollMap(monitoringDectionTempletEntityList);
 
-		String[] COMPLETE_FIX_PREFIX = { "序号", "任务名称", "样品编号", "样品名称", "抽样环节", "抽样省", "抽样市", "抽样县", "抽样地址", "企业名称",
+		String[] COMPLETE_FIX_PREFIX = { "序号", //"任务名称", 
+				"样品编号", "样品名称", "抽样环节","抽样地点", "抽样省", "抽样市", "抽样县", "抽样地址", "企业名称",
 				"溯源省", "溯源市", "溯源县", "溯源产地", "判定结果" };
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 
@@ -1117,10 +1118,11 @@ public class DetectionServiceImpl extends CommonServiceImpl implements
 	private Map<String, Object> getCompleteReportRow(int i, Map<String, Object> detail, Map pollMap) {
 		Map<String, Object> rowMap = new LinkedHashMap<String, Object>();
 		rowMap.put("TITLE_1", i); // 序号
-		rowMap.put("TITLE_2", ""); // 任务名称
-		rowMap.put("TITLE_3", detail.get("sampleCode")); // 样品编号
-		rowMap.put("TITLE_4", detail.get("cname")); // 样品名称
-		rowMap.put("TITLE_5", detail.get("typeName")); // 抽样环节
+//		rowMap.put("TITLE_2", ""); // 任务名称
+		rowMap.put("TITLE_2", detail.get("sampleCode")); // 样品编号
+		rowMap.put("TITLE_3", detail.get("cname")); // 样品名称
+		rowMap.put("TITLE_4", detail.get("typeName")); // 抽样环节
+		rowMap.put("TITLE_5", detail.get("samplingAddress")); // 抽样地点
 		rowMap.put("TITLE_6", "江苏省"); // 抽样省
 		rowMap.put("TITLE_7", detail.get("cityName")); // 抽样市
 		rowMap.put("TITLE_8", detail.get("countyName")); // 抽样县
