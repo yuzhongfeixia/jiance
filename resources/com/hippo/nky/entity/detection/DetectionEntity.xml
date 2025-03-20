@@ -930,7 +930,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		 INNER JOIN NKY_ORGANIZATION_INFO OI ON OI.CODE = T_COMPETENCE.COMPETENCE_CODE
 		 INNER JOIN NKY_MONITORING_DECTION_TEMPLET MDT ON MDT.AGR_CODE = pkg_detection_info.get_agr_ancestor(#{projectCode} ,NSI.AGR_CODE) 
 		                                              AND MDT.POLL_CAS = NDI.CAS_CODE
-		  LEFT JOIN NKY_POLL_DICTIONARY PD ON NDI.CAS_CODE = PD.CAS
+		 INNER JOIN (select NPD.cas, NPD.popcname
+     from nky_poll_products NPD
+     join nky_standard_version nsv
+       on nsv.poll_version_id = NPD.versionid
+     join nky_monitoring_project nmp
+       on nmp.judge_version_id = nsv.id
+    where nmp.project_code = #{projectCode}) PD ON NDI.CAS_CODE = PD.CAS
 		 WHERE MDT.PROJECT_CODE = #{projectCode}
 		   AND OI.ID = #{orgCode}
 		   AND NSI.LAB_CODE = #{labCode}
