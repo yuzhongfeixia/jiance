@@ -663,9 +663,17 @@ public class DetectionController extends BaseController {
 				NkyDetectionInformationEntity deteInfoEntity = detectionService.get(
 						NkyDetectionInformationEntity.class, ConverterUtil.toString(idKeyString.replace("pld_", "")));
 				// 设置检出值
-				deteInfoEntity.setDetectionValue(ConverterUtil.toBigDecimal(ConverterUtil.toString(paramMap.get(idKeyString))));
-				// 设置一种没有对应的code(下面更新该字段时使用)
-				deteInfoEntity.setIsOverproof("3");
+				String detectionValue = ConverterUtil.toString(paramMap.get(idKeyString));
+				if (detectionValue.indexOf("_") > -1) {
+					//页面输入的检出的情况处理
+					deteInfoEntity.setDetectionValue(
+							ConverterUtil.toBigDecimal(detectionValue.substring(0, detectionValue.indexOf("_"))));
+					deteInfoEntity.setIsOverproof("1");
+				} else {
+					deteInfoEntity.setDetectionValue(ConverterUtil.toBigDecimal(detectionValue));
+					// 设置一种没有对应的code(下面更新该字段时使用)
+					deteInfoEntity.setIsOverproof("3");
+				}
 				detInfoList.add(deteInfoEntity);
 			}
 		}
@@ -695,7 +703,6 @@ public class DetectionController extends BaseController {
 		j.setSuccess(true);
 		return j;
 	}
-	
 	/**
 	 * 检测信息上报页跳转
 	 * 

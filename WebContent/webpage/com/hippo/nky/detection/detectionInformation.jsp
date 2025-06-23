@@ -47,6 +47,9 @@ function setTempValsToSubmit(data){
 		if("未检" == value){
 			data.params[key] = '-1';
 		}
+		if("检出" == value) {
+			data.params[key] = '0.01_1';
+		}
 	}
 	return data;
 }
@@ -223,7 +226,7 @@ function setTempValsToSubmit(data){
 											<td class="detInfo_title">${detInfo.pollName}</td>
 											<td class="detInfo_value">
 												<c:set var="detInfoValueStr" value="${detInfo.detectionValue < 0?'未检':detInfo.detectionValue == 0?'未检出':detInfo.detectionValue}"/>
-												<input name="pld_${detInfo.id}" type="text" class="m-wrap small" value="${detInfoValueStr}" ignore="ignore" datatype="/^未检$|^未检出$|^\d{1,4}(\.\d{1,6})?$/" errormsg="输入值不合法！"/>
+												<input name="pld_${detInfo.id}" type="text" class="m-wrap small" value="${detInfoValueStr}" ignore="ignore" datatype="/^未检$|^未检出$|^检出$|^\d{1,4}(\.\d{1,6})?$/" errormsg="输入值不合法！"/>
 											</td>
 										</tr>
 									</c:if>
@@ -236,7 +239,7 @@ function setTempValsToSubmit(data){
 													<td class="detInfo_title">${detInfo.pollName}</td>
 													<td class="detInfo_value">
 														<c:set var="detInfoValueStr" value="${empty detInfo.detectionValue? '未检出' :detInfo.detectionValue < 0?'未检':detInfo.detectionValue == 0?'未检出':detInfo.detectionValue}"/>
-														<input name="pld_${detInfo.id}" type="text" class="m-wrap small" value="${detInfoValueStr}" ignore="ignore" datatype="/^未检$|^未检出$|^\d{1,4}(\.\d{1,6})?$/" errormsg="输入值不合法！"/>
+														<input name="pld_${detInfo.id}" type="text" class="m-wrap small" value="${detInfoValueStr}" ignore="ignore" datatype="/^未检$|^未检出$|^检出$|^\d{1,4}(\.\d{1,6})?$/" errormsg="输入值不合法！"/>
 													</td>
 												</c:forEach>
 												<c:set var="detIndex" value="${detIndex+2}"></c:set>
@@ -249,7 +252,7 @@ function setTempValsToSubmit(data){
 													<td class="detInfo_title">${detInfo.pollName}</td>
 													<td class="detInfo_value">
 														<c:set var="detInfoValueStr" value="${empty detInfo.detectionValue? '未检出' :detInfo.detectionValue < 0?'未检':detInfo.detectionValue == 0?'未检出':detInfo.detectionValue}"/>
-														<input name="pld_${detInfo.id}" type="text" class="m-wrap small" value="${detInfoValueStr}" ignore="ignore" datatype="/^未检$|^未检出$|^\d{1,4}(\.\d{1,6})?$/" errormsg="输入值不合法！"/>
+														<input name="pld_${detInfo.id}" type="text" class="m-wrap small" value="${detInfoValueStr}" ignore="ignore" datatype="/^未检$|^未检出$|^检出$|^\d{1,4}(\.\d{1,6})?$/" errormsg="输入值不合法！"/>
 													</td>
 												</c:forEach>
 												<c:set var="modTd" value="${(modTd-4 < 0 ? 4-modTd:modTd-4)}"></c:set>
