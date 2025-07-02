@@ -213,9 +213,9 @@
 														<tr>
 															<td align="center"><input  style="width:20px;" type="checkbox" name="ck"/></td>
 															   <td align="left"><input name="monitoringProjectList[${stuts.index }].name" value="${poVal.name }" type="text"></td>
-															   <td align="left"><t:dictSelect field="monitoringProjectList[${stuts.index }].leadunit" hasLabel="false" customData="${organizationData}" defaultVal="${poVal.leadunit}"  extend="{class:{value:'m-wrap'},style:{value:'width:368px;'}}"></t:dictSelect></td>
+															   <td align="left"><t:dictSelect field="monitoringProjectList[${stuts.index }].leadunit" hasLabel="false" customData="${organizationData}" defaultVal="${poVal.leadunit}"  extend="{class:{value:'m-wrap'},style:{value:'width:268px;'}}"></t:dictSelect></td>
 															   <td align="left"><t:dictSelect field="monitoringProjectList[${stuts.index }].industryCode" hasLabel="false" typeGroupCode="industry" defaultVal="${poVal.industryCode}"  extend="{class:{value:'m-wrap'},style:{value:'width:60px;'}}"></t:dictSelect></td>
-															   <td align="left"><t:dictSelect field="monitoringProjectList[${stuts.index }].judgeVersionId" hasLabel="false" customData="${judgeVersionData}" defaultVal="${poVal.judgeVersionId}" extend="{class:{value:'m-wrap'},style:{value:'width:150px;'}}"></t:dictSelect></td>
+															   <td align="left"><t:dictSelect field="monitoringProjectList[${stuts.index }].judgeVersionId" hasLabel="false" customData="${judgeVersionData}" defaultVal="${poVal.judgeVersionId}" extend="{class:{value:'m-wrap'},style:{value:'width:250px;'}}"></t:dictSelect></td>
 											   			</tr>
 													</c:forEach>
 												</c:if>	
