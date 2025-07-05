@@ -859,11 +859,12 @@
 	// 复制数据功能
 	function projectSelectEdit(thisObj){
 		var code = $(thisObj).val();
+		var pId = $("#project_id").val();
 		$.ajax({
 			type : "POST",
 			async : false,
 			url : "monitoringProjectController.do?projectSelectEdit",
-			data : {"code" : code},
+			data : {"code" : code, "pId" : pId},
 			success : function(data) {
 				var d = $.parseJSON(data);
 				$("#monitorProject").html(d.attributes.data);
@@ -1499,6 +1500,7 @@
 							</form>
 						</div>
 					</div>
+					<div style="color:red; margin-left: 110px;">注：只有检测标准相同的项目才可以复制</div>
 				</div>
 				<div class="modal-footer">
 					<button type="button" data-dismiss="modal" class="btn popclose">关闭</button>

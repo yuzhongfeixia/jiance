@@ -1,4 +1,5 @@
 package com.hippo.nky.controller.monitoring;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -618,6 +619,14 @@ public class MonitoringProjectController extends BaseController {
 			j.setSuccess(false);
 			return j;
 		}
+		
+		String pId = ConverterUtil.toString(request.getAttribute("pId"));
+		String judgeVersionId = "";
+		if (!ConverterUtil.isEmpty(pId)) {
+			MonitoringProjectEntity thisProject = monitoringProjectService.get(MonitoringProjectEntity.class, pId);
+			judgeVersionId = thisProject.getJudgeVersionId();
+		}
+		
 		// 取得登陆的单位id
 		SessionInfo sessioninfo =(SessionInfo) request.getSession().getAttribute(Globals.USER_SESSION);
 		String releaseunit = sessioninfo.getUser().getOrganization().getCode();
@@ -627,7 +636,17 @@ public class MonitoringProjectController extends BaseController {
 		StringBuffer st = new StringBuffer();
 		// 拼接下拉框
 		for (MonitoringProjectEntity monitoringProjectEntity : monitoringProjectEntityList) {
-			st.append("<option value=\"" + monitoringProjectEntity.getId() + "\">");
+			st.append("<option value=\"" + monitoringProjectEntity.getId() + "\"");
+			if (!ConverterUtil.isEmpty(pId)) {
+				if (judgeVersionId.equals(monitoringProjectEntity.getJudgeVersionId())) {
+					st.append(" style=\"color:black;\"");
+				} else {
+					st.append(" disabled style=\"color:gray;\"");
+				}
+			} else {
+				st.append(" style=\"color:black;\"");
+			}
+			st.append(">");
 			st.append(monitoringProjectEntity.getName());
 			st.append("</option>");
 		}
