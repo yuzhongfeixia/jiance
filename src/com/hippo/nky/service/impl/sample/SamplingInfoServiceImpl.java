@@ -707,8 +707,13 @@ public class SamplingInfoServiceImpl extends CommonServiceImpl implements Sampli
 		List<String> pollList = null;
 		pollList = this.findListByMyBatis(NAME_SPACE+"getAgrPollTemplate", selCodition);
 		// 若污染物模版里找不到对应的农产品，则从从分类里找，一层层找直到找到
-		if(pollList.size() == 0){
-			pollList = this.findListByMyBatis(NAME_SPACE+"getAgrPollTemplate1", selCodition);
+		if (pollList.size() == 0) {
+			List<String> temp = this.findListByMyBatis(NAME_SPACE + "get_agr_ancestor", selCodition);
+			if (temp != null && temp.size() > 0)
+			{
+				selCodition.put("agrCode1", temp.get(0));
+				pollList = this.findListByMyBatis(NAME_SPACE + "getAgrPollTemplate1", selCodition);
+			}
 		}
 		// 若分类里找不到，则说明该农产品及其分类没有设置污染物模版，则从判定标准里取
 		if (pollList.size() == 0) {

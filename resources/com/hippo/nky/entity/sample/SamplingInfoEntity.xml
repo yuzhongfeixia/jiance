@@ -1243,6 +1243,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		AND T.AGR_CODE = #{agrCode}
 	</select>
 	
+	<!--根据projectCode和agrCode获取大类-->
+	<select id="get_agr_ancestor" resultType="java.lang.String" parameterType="java.util.HashMap">
+		select pkg_detection_info.get_agr_ancestor(#{projectCode} ,#{agrCode}) from dual
+	</select>
+	
 	<!-- 递归取污染物模板 -->
 	<select id="getAgrPollTemplate1" resultType="java.lang.String" parameterType="java.util.HashMap">
 	  SELECT 
@@ -1252,7 +1257,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    inner join V_NKY_MONITORING_AGR AGR ON (AGR.CODE = NMDT.AGR_CODE AND AGR.PROJECT_CODE = NMDT.PROJECT_CODE)
 	  WHERE 
 	  NMDT.PROJECT_CODE = #{projectCode}
-	  AND AGR.CODE = pkg_detection_info.get_agr_ancestor(#{projectCode} ,#{agrCode}) 
+	  AND AGR.CODE = #{agrCode1}
+	  <!--AND AGR.CODE = pkg_detection_info.get_agr_ancestor(#{projectCode} ,#{agrCode}) -->
 <!-- 	  AND AGR.ID = ( -->
 <!-- 	      SELECT ID -->
 <!-- 	      FROM (     -->
